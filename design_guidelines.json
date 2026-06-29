@@ -1,0 +1,124 @@
+{
+  "theme": "light",
+  "archetype": "4 (Swiss & High-Contrast)",
+  "core_vibe": "Confidence + Clarity, data-driven authority but beginner-approachable. Rejects the 'purple/teal AI slop' for a clean, structural, technical look.",
+  "colors": {
+    "primary": {
+      "DEFAULT": "#047857",
+      "foreground": "#FFFFFF",
+      "hover": "#059669"
+    },
+    "secondary": {
+      "DEFAULT": "#1E293B",
+      "foreground": "#FFFFFF",
+      "hover": "#334155"
+    },
+    "accent": {
+      "DEFAULT": "#FA5252",
+      "foreground": "#FFFFFF",
+      "hover": "#FF6B6B"
+    },
+    "background": {
+      "light": "#F8F9FA",
+      "dark": "#0A0A0A"
+    },
+    "surface": {
+      "light": "#FFFFFF",
+      "dark": "#121212"
+    },
+    "border": {
+      "light": "#E2E8F0",
+      "dark": "#27272A"
+    },
+    "text": {
+      "light": "#0F172A",
+      "dark": "#F8FAFC"
+    },
+    "muted": {
+      "DEFAULT": "#F1F5F9",
+      "foreground": "#64748B",
+      "dark": "#1E1E24",
+      "dark_foreground": "#A1A1AA"
+    }
+  },
+  "typography": {
+    "rules": [
+      "No generic sans-serif for headings (BANNED: Inter, Roboto, Open Sans).",
+      "Headings must use tight letter spacing: 'tracking-tight'."
+    ],
+    "fonts": {
+      "headings": "Cabinet Grotesk",
+      "body": "IBM Plex Sans",
+      "mono": "JetBrains Mono"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tighter font-bold",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-semibold",
+      "h3": "text-xl sm:text-2xl tracking-tight font-medium",
+      "body": "text-base leading-relaxed",
+      "overline": "text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground",
+      "massive_score": "text-7xl sm:text-8xl lg:text-9xl tracking-tighter font-black"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Generous Spacing + The 'Control Room' Grid",
+    "grid_strategy": {
+      "dashboards": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 or gap-6",
+      "landing": "grid-cols-1 md:grid-cols-12 gap-8 or gap-12"
+    },
+    "surfaces": "Grid Borders (The 'Technical' Look). Containers use border-collapse style layout. Items have `border-r border-b border-border/40`. Exposed skeleton.",
+    "alignment": "Left-align dense data, labels, and paragraphs. 'Left-to-Right Hierarchy' for metrics (e.g., placing the Score at top-left)."
+  },
+  "components": {
+    "strategy": "Shadcn UI heavily customized with sharp edges or max 8px radius. Cardless structures where possible.",
+    "buttons": "Flat, pure color blocks. Minimal shadow. 4px right padding offset if icon on left.",
+    "cards": "Flat background, 1px subtle border, no shadow. Hover: slight lift (-translate-y-1) and shadow-sm.",
+    "data_viz": "Recharts or Shadcn Charts. No 3D charts. Clear, flat colors based on primary and accent.",
+    "modals": "Backdrop blur heavy (backdrop-blur-xl) with solid surface."
+  },
+  "motion_and_interaction": {
+    "animations": "Minimalist micro-interactions. No bouncy effects.",
+    "hover_states": "ALWAYS explicitly set text color on hover. Border color darkens.",
+    "transitions": "transition-transform duration-200 ease-out, transition-colors duration-200"
+  },
+  "accessibility": {
+    "contrast": "Ensure APCA/WCAG AA compliance. Use text-shadow if overlaying images.",
+    "focus": "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+    "data_testid": "MANDATORY on all buttons, links, form inputs, and key informational elements (e.g., `data-testid='scan-submit-btn'`)."
+  },
+  "media": {
+    "image_urls": [
+      {
+        "url": "https://images.pexels.com/photos/11940942/pexels-photo-11940942.jpeg",
+        "category": "background",
+        "description": "Abstract geometric metal framework for landing page hero background (use with heavy opacity overlay, e.g., bg-black/80 to maintain text contrast)."
+      },
+      {
+        "url": "https://images.pexels.com/photos/4386356/pexels-photo-4386356.jpeg",
+        "category": "feature",
+        "description": "Minimalist workspace to illustrate the business owner persona context on the landing page."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1657974361095-4d5f3fb381fb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHw0fHxzb2NpYWwlMjBtZWRpYSUyMG1hcmtldGluZyUyMGNoYXJ0fGVufDB8fHx8MTc4MTg2MTM1MHww&ixlib=rb-4.1.0&q=85",
+        "category": "feature",
+        "description": "Scrabble tiles spelling 'Social Media' to illustrate the creator persona context on the landing page or empty states."
+      },
+      {
+        "url": "https://images.pexels.com/photos/20157010/pexels-photo-20157010.jpeg",
+        "category": "avatar",
+        "description": "Professional user avatar for testimonials, mock dashboard profiles, or outreach drafts."
+      }
+    ],
+    "icons": "lucide-react (default) for functional SaaS icons."
+  },
+  "instructions_to_main_agent": [
+    "Load 'Cabinet Grotesk' via fontshare API link in HTML head: <link href='https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,500,700,400,900&display=swap' rel='stylesheet'>",
+    "Load 'IBM Plex Sans' via standard Google Fonts approach.",
+    "Do NOT use HTML inputs for complex forms; use Shadcn Select/Calendar/Form.",
+    "Build the dashboard using the 'Control Room' grid strategy. The 0-100 score should dominate the top-left of the Results page.",
+    "Avoid generic AI design patterns like purple-to-blue gradients, neon glowing text, or starry background particles.",
+    "Ensure the Landing page and New Scan page clearly split the two modes (Business vs Creator).",
+    "Every interactive element MUST have a `data-testid` attribute in kebab-case.",
+    "Use plain language in the UI (e.g., 'Why this hurts your conversions' instead of 'Optimization Vector Analysis')."
+  ]
+}
