@@ -74,6 +74,10 @@ class ContentPlanReq(BaseModel):
     days: Literal[7, 30] = 7
 
 
+class CompareReq(BaseModel):
+    competitor_url: str
+
+
 # ============ AUTH HELPERS ============
 def hash_pw(pw: str) -> str:
     return bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
@@ -251,16 +255,37 @@ specific to the site content provided. Never invent facts not present in the dat
 BUSINESS_PROMPT = """Analyze this website data and respond with ONLY a JSON object in this exact schema:
 
 {{
-  "score": <0-100 integer>,
+  "score": <0-100 integer overall>,
+  "subscores": {{
+    "trust": <0-100>,
+    "conversion": <0-100>,
+    "ux": <0-100>,
+    "copywriting": <0-100>,
+    "brand": <0-100>,
+    "seo": <0-100>
+  }},
   "summary": "<2-3 sentence plain-English summary of what this business does and how the site performs>",
   "strengths": ["<3 short bullets>"],
   "top_fixes": [
-    {{"title":"<short fix>","why":"<why this hurts conversions, plain English>","action":"<exact next step>","priority":"high|medium|low"}}
+    {{
+      "title":"<short fix>",
+      "why":"<why this hurts conversions, plain English>",
+      "action":"<exact next step>",
+      "priority":"high|medium|low",
+      "code_language":"css|html|jsx",
+      "code_before":"<current problematic code snippet, short>",
+      "code_after":"<improved code snippet, plain CSS or HTML>",
+      "code_tailwind":"<same fix written as Tailwind classes on a small React JSX snippet>",
+      "code_react":"<same fix written as a tiny React component using shadcn-style classes>"
+    }}
   ],
   "trust_gaps": ["<bullets>"],
   "cta_issues": ["<bullets>"],
   "seo_issues": ["<bullets>"],
   "mobile_issues": ["<bullets>"],
+  "copywriting_rewrites": [
+    {{"section":"hero_headline|hero_subheadline|primary_cta|value_prop|testimonial_headline","before":"<current copy or 'none found'>","after":"<sharper rewrite>","why":"<why the new one converts better>"}}
+  ],
   "leads": [
     {{"name":"<person or company>","role":"<title>","email":"<if found>","phone":"<if found>","source":"<where on site>","notes":"<context>"}}
   ],
@@ -273,7 +298,8 @@ BUSINESS_PROMPT = """Analyze this website data and respond with ONLY a JSON obje
   "checklist": ["<5-7 next-step action items in plain language>"]
 }}
 
-Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches.
+Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, 5 copywriting_rewrites (one per section listed).
+Each top_fix MUST include realistic, copy-pasteable code snippets. Keep snippets under 15 lines each.
 If no leads found, return an empty list for leads.
 
 WEBSITE DATA:
@@ -317,6 +343,34 @@ NOTES: {notes}
 
 
 CONTENT_PLAN_SYS = """You are a content calendar planner for creators. Output strictly valid JSON only."""
+
+COMPARE_SYS = """You are a competitive-analysis growth strategist. Compare two websites and output strictly valid JSON only."""
+
+COMPARE_PROMPT = """Compare these two websites and respond with ONLY a JSON object:
+
+{{
+  "winner": "mine|competitor|tie",
+  "verdict": "<2-3 sentence plain-English verdict on who wins and why>",
+  "subscores": {{
+    "trust":       {{"mine": <0-100>, "competitor": <0-100>}},
+    "conversion":  {{"mine": <0-100>, "competitor": <0-100>}},
+    "ux":          {{"mine": <0-100>, "competitor": <0-100>}},
+    "copywriting": {{"mine": <0-100>, "competitor": <0-100>}},
+    "brand":       {{"mine": <0-100>, "competitor": <0-100>}},
+    "seo":         {{"mine": <0-100>, "competitor": <0-100>}}
+  }},
+  "overall": {{"mine": <0-100>, "competitor": <0-100>}},
+  "where_they_win": ["<3-5 bullets: what competitor does better>"],
+  "where_you_win":  ["<3-5 bullets: what you do better>"],
+  "steal_this":     ["<3-5 concrete tactics to copy from the competitor>"]
+}}
+
+MINE (already-scored site):
+{mine}
+
+COMPETITOR (raw scraped data):
+{comp}
+"""
 
 CONTENT_PLAN_PROMPT = """Create a {days}-day content plan based on this creator analysis. JSON schema:
 
@@ -436,6 +490,42 @@ async def list_plans(user=Depends(current_user)):
 
 
 # ============ STATS ============
+@api.post("/scans/{scan_id}/compare")
+async def compare_competitor(scan_id: str, body: CompareReq, user=Depends(current_user)):
+    scan = await db.scans.find_one({"id": scan_id, "user_id": user["id"]}, {"_id": 0})
+    if not scan:
+        raise HTTPException(404, "Scan not found")
+    if scan["mode"] != "business":
+        raise HTTPException(400, "Competitor compare is only for business scans")
+    comp_scraped = scrape_website(body.competitor_url)
+    mine_ctx = {
+        "url": scan["target"],
+        "score": scan.get("score"),
+        "subscores": (scan.get("result") or {}).get("subscores"),
+        "summary": (scan.get("result") or {}).get("summary"),
+        "strengths": (scan.get("result") or {}).get("strengths"),
+        "top_fixes": [f.get("title") for f in ((scan.get("result") or {}).get("top_fixes") or [])],
+    }
+    prompt = COMPARE_PROMPT.format(
+        mine=json.dumps(mine_ctx, ensure_ascii=False)[:4000],
+        comp=json.dumps({
+            "url": comp_scraped["url"],
+            "title": comp_scraped["title"],
+            "meta_description": comp_scraped["meta_description"],
+            "h1": comp_scraped["h1"],
+            "h2": comp_scraped["h2"],
+            "buttons_or_links": comp_scraped["buttons_or_links"][:20],
+            "has_https": comp_scraped["has_https"],
+            "has_viewport": comp_scraped["has_viewport"],
+            "body_text_sample": comp_scraped["body_text_sample"][:2500],
+        }, ensure_ascii=False)[:4500],
+    )
+    result = await llm_json(COMPARE_SYS, prompt, scan_id + "_cmp")
+    result["competitor_url"] = comp_scraped["url"]
+    await db.scans.update_one({"id": scan_id}, {"$set": {"comparison": result}})
+    return result
+
+
 @api.get("/stats")
 async def stats(user=Depends(current_user)):
     scans = await db.scans.find({"user_id": user["id"]}, {"_id": 0}).to_list(500)

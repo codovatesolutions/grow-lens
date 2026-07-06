@@ -34,6 +34,13 @@ Build a complete AI-powered SaaS application called **GrowthLens AI** with two m
 - Light/dark theme toggle
 - JSON export of any scan + all scans
 
+## Implemented in Phase 1 (2026-07-06)
+- **AI Auto Fix with copyable code**: every top_fix now includes code_before, code_after (CSS/HTML), code_tailwind, and code_react — shown as tabs in the Results page with per-tab Copy buttons
+- **Multi-score breakdown**: Trust · Conversion · UX · Copywriting · Brand · SEO subscores rendered as bars alongside the overall score
+- **"Copy for AI" export**: dropdown on Results page emits ready-to-paste prompts for ChatGPT, Claude, and Cursor
+- **AI Copywriting rewrites**: 5 sections (hero_headline, hero_subheadline, primary_cta, value_prop, testimonial_headline) with before/after + why-it-converts explanation, per-section copy button
+- **Competitor comparison**: new `POST /api/scans/{id}/compare` endpoint scrapes competitor, calls Gemini for side-by-side subscore matrix, verdict, "where they win / you win / steal this", stored on the scan doc
+
 ## Known limitations / next backlog
 - **P0**: Stripe billing is stubbed — clicking upgrade shows a toast only
 - **P0**: Universal Key budget — if at 0, scans fail with "Budget exceeded"; user must top up at Profile → Universal Key → Add Balance
