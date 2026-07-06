@@ -1,0 +1,25 @@
+{
+  "summary": "Backend-only E2E testing for GrowthLens AI. All 12 required endpoints tested end-to-end including auth, scans (business+creator with real LLM), content plans, stats, and cross-user isolation. 30/30 real assertions pass. One 'failure' in report was a test-script bug (compared original-case email vs server-lowercased email); backend behavior is correct.",
+  "tested_scope": ["backend", "auth", "integration"],
+  "passed": [
+    "POST /api/auth/register: creates user, returns JWT+user (no password_hash, no _id)",
+    "POST /api/auth/register duplicate email -> 400",
+    "POST /api/auth/login correct creds -> 200 with token; wrong password -> 401",
+    "GET /api/auth/me valid token returns user; missing/invalid token -> 401",
+    "GET /api/stats returns numeric counts/averages for authenticated user",
+    "POST /api/scans mode=business target=https://example.com -> status=complete with exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, non-empty checklist, score in 0-100",
+    "POST /api/scans mode=creator (instagram URL) -> status=complete with content_pillars, exactly 10 post_ideas, exactly 5 captions, non-empty checklist",
+    "GET /api/scans lists user's scans sorted desc by created_at",
+    "GET /api/scans/{id}: owner 200; other user -> 404 (cross-user isolation)",
+    "DELETE /api/scans/{id}: owner 200; other user -> 404",
+    "POST /api/content-plan creator scan_id days=7 -> 7-day plan; business scan_id -> 400; unknown scan_id -> 404",
+    "GET /api/content-plans lists user's plans",
+    "Cross-user list isolation: user B does not see user A's scans"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "not tested (per request)"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "LLM calls (Gemini 3 Flash via emergentintegrations) succeeded end-to-end for 2 scans + 1 content plan. Cross-user isolation verified. Universal Key budget is functional."
+}
