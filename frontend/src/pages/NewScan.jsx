@@ -6,6 +6,7 @@ import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Globe, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,13 +15,16 @@ export default function NewScan() {
   const [mode, setMode] = useState("business");
   const [target, setTarget] = useState("");
   const [notes, setNotes] = useState("");
+  const [industry, setIndustry] = useState("auto");
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     if (!target.trim()) { toast.error("Enter a URL or profile link"); return; }
     setBusy(true);
     try {
-      const { data } = await api.post("/scans", { mode, target: target.trim(), notes });
+      const payload = { mode, target: target.trim(), notes };
+      if (mode === "business") payload.industry = industry;
+      const { data } = await api.post("/scans", payload);
       toast.success("Scan complete");
       nav(`/scan/${data.id}`);
     } catch (e) {
@@ -47,6 +51,25 @@ export default function NewScan() {
             <Label>Website URL</Label>
             <Input placeholder="https://acme.com" value={target} onChange={(e)=>setTarget(e.target.value)} data-testid="scan-business-url"/>
             <p className="text-xs text-muted-foreground">We'll read your homepage, CTAs, trust elements, and contact paths. Public data only.</p>
+          </div>
+          <div className="space-y-2">
+            <Label>Industry</Label>
+            <Select value={industry} onValueChange={setIndustry}>
+              <SelectTrigger data-testid="scan-industry-select"><SelectValue/></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Auto-detect</SelectItem>
+                <SelectItem value="saas">SaaS / Software</SelectItem>
+                <SelectItem value="ecommerce">E-commerce</SelectItem>
+                <SelectItem value="restaurant">Restaurant / Food</SelectItem>
+                <SelectItem value="portfolio">Portfolio / Personal</SelectItem>
+                <SelectItem value="agency">Agency / Services</SelectItem>
+                <SelectItem value="hospital">Hospital / Clinic</SelectItem>
+                <SelectItem value="school">School / Education</SelectItem>
+                <SelectItem value="realestate">Real estate</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">Get industry-specific fixes tuned to your vertical.</p>
           </div>
           <div className="space-y-2">
             <Label>Anything we should know? (optional)</Label>

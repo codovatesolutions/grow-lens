@@ -17,6 +17,7 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 import jwt
 import requests
+import urllib.parse
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 from emergentintegrations.llm.chat import LlmChat, UserMessage
@@ -67,6 +68,7 @@ class ScanCreate(BaseModel):
     mode: Literal["business", "creator"]
     target: str  # URL or profile link
     notes: Optional[str] = None
+    industry: Optional[str] = None  # auto | restaurant | saas | ecommerce | portfolio | agency | hospital | school | realestate | other
 
 
 class ContentPlanReq(BaseModel):
@@ -295,12 +297,19 @@ BUSINESS_PROMPT = """Analyze this website data and respond with ONLY a JSON obje
   "sales_pitches": [
     {{"angle":"<short>","pitch":"<2-3 sentences>"}}
   ],
+  "industry_detected": "<one word: restaurant|saas|ecommerce|portfolio|agency|hospital|school|realestate|blog|other>",
+  "industry_insights": ["<4-6 industry-specific recommendations tuned to industry_detected or the provided industry hint>"],
+  "screenshot_annotations": [
+    {{"label":"<short label, 2-4 words>","color":"red|yellow|green","x_pct":<0-100 approximate horizontal position on desktop screenshot>,"y_pct":<0-100 approximate vertical position>,"note":"<one-sentence explanation>"}}
+  ],
   "checklist": ["<5-7 next-step action items in plain language>"]
 }}
 
-Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, 5 copywriting_rewrites (one per section listed).
+Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, 5 copywriting_rewrites (one per section listed), 4-6 industry_insights, and 4-6 screenshot_annotations (mix red for critical / yellow for warning / green for strengths, roughly positioned across the fold).
 Each top_fix MUST include realistic, copy-pasteable code snippets. Keep snippets under 15 lines each.
 If no leads found, return an empty list for leads.
+
+INDUSTRY HINT (may be 'auto' or empty): {industry}
 
 WEBSITE DATA:
 {data}
@@ -398,6 +407,7 @@ async def create_scan(body: ScanCreate, user=Depends(current_user)):
         "mode": body.mode,
         "target": body.target,
         "notes": body.notes or "",
+        "industry": body.industry or "auto",
         "status": "processing",
         "created_at": now,
     }
@@ -406,8 +416,17 @@ async def create_scan(body: ScanCreate, user=Depends(current_user)):
     try:
         if body.mode == "business":
             scraped = scrape_website(body.target)
-            prompt = BUSINESS_PROMPT.format(data=json.dumps(scraped, ensure_ascii=False)[:8000])
+            prompt = BUSINESS_PROMPT.format(
+                data=json.dumps(scraped, ensure_ascii=False)[:8000],
+                industry=body.industry or "auto",
+            )
             result = await llm_json(BUSINESS_SYS, prompt, sid)
+            # Free WordPress mshots for screenshots — no browser install needed
+            enc = urllib.parse.quote(scraped["url"], safe="")
+            result["screenshots"] = {
+                "desktop": f"https://s0.wp.com/mshots/v1/{enc}?w=1200&h=900",
+                "mobile":  f"https://s0.wp.com/mshots/v1/{enc}?w=400&h=800",
+            }
             result["scraped"] = {
                 "title": scraped["title"],
                 "meta_description": scraped["meta_description"],
@@ -490,6 +509,50 @@ async def list_plans(user=Depends(current_user)):
 
 
 # ============ STATS ============
+from fastapi.responses import Response
+
+
+@api.get("/public/scans/{scan_id}")
+async def public_scan(scan_id: str):
+    doc = await db.scans.find_one({"id": scan_id, "status": "complete"}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Scan not found")
+    r = doc.get("result") or {}
+    # Strip private-ish fields (leads, outreach emails) for the public view
+    return {
+        "id": doc["id"],
+        "target": doc["target"],
+        "mode": doc["mode"],
+        "score": doc.get("score", 0),
+        "created_at": doc["created_at"],
+        "summary": r.get("summary"),
+        "subscores": r.get("subscores"),
+        "strengths": r.get("strengths", []),
+        "top_fixes_titles": [f.get("title") for f in (r.get("top_fixes") or [])],
+        "screenshots": r.get("screenshots"),
+    }
+
+
+@api.get("/public/scans/{scan_id}/badge.svg")
+async def public_badge(scan_id: str):
+    doc = await db.scans.find_one({"id": scan_id, "status": "complete"}, {"_id": 0})
+    if not doc:
+        raise HTTPException(404, "Scan not found")
+    score = int(doc.get("score", 0) or 0)
+    color = "#047857" if score >= 75 else "#eab308" if score >= 50 else "#dc2626"
+    label = "GrowthLens Score"
+    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" width="220" height="56" viewBox="0 0 220 56">
+  <rect width="220" height="56" rx="8" fill="#0a0a0a"/>
+  <rect x="0" y="0" width="150" height="56" rx="8" fill="#111"/>
+  <text x="18" y="22" font-family="ui-sans-serif,system-ui" font-size="10" fill="#a1a1aa" letter-spacing="2">GROWTHLENS</text>
+  <text x="18" y="42" font-family="ui-sans-serif,system-ui" font-size="14" font-weight="600" fill="#f8fafc">{label}</text>
+  <rect x="150" y="0" width="70" height="56" fill="{color}" rx="8"/>
+  <rect x="150" y="0" width="10" height="56" fill="{color}"/>
+  <text x="185" y="36" text-anchor="middle" font-family="ui-sans-serif,system-ui" font-size="24" font-weight="800" fill="#ffffff">{score}</text>
+</svg>"""
+    return Response(content=svg, media_type="image/svg+xml", headers={"Cache-Control": "public, max-age=300"})
+
+
 @api.post("/scans/{scan_id}/compare")
 async def compare_competitor(scan_id: str, body: CompareReq, user=Depends(current_user)):
     scan = await db.scans.find_one({"id": scan_id, "user_id": user["id"]}, {"_id": 0})

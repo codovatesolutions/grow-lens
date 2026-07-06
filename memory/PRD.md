@@ -41,6 +41,11 @@ Build a complete AI-powered SaaS application called **GrowthLens AI** with two m
 - **AI Copywriting rewrites**: 5 sections (hero_headline, hero_subheadline, primary_cta, value_prop, testimonial_headline) with before/after + why-it-converts explanation, per-section copy button
 - **Competitor comparison**: new `POST /api/scans/{id}/compare` endpoint scrapes competitor, calls Gemini for side-by-side subscore matrix, verdict, "where they win / you win / steal this", stored on the scan doc
 
+## Implemented in Phase 2 (2026-07-06)
+- **Annotated screenshots**: WordPress mshots (`s0.wp.com/mshots/v1`) generates desktop (1200×900) + mobile (400×800) previews with no browser install. Gemini returns `screenshot_annotations` (label, color, x_pct, y_pct, note) rendered as numbered overlay pins with hover tooltips + a callout list below.
+- **Shareable badge + embed**: new public no-auth endpoints — `GET /api/public/scans/{id}` (redacted read-only view) and `GET /api/public/scans/{id}/badge.svg` (dynamic SVG badge with color-coded score). Frontend `/public/scan/:id` route renders shareable landing card with score ring, subscores, hero screenshot, and signup CTA. Results page "Share" dropdown copies public link / embed code / opens badge.
+- **Industry-specific analysis**: `industry` field added to `ScanCreate` (auto/saas/ecommerce/restaurant/portfolio/agency/hospital/school/realestate/other). Business prompt now returns `industry_detected` and 4-6 `industry_insights` tuned to the vertical. New Scan page has an Industry select; Results page renders an Industry Insights section.
+
 ## Known limitations / next backlog
 - **P0**: Stripe billing is stubbed — clicking upgrade shows a toast only
 - **P0**: Universal Key budget — if at 0, scans fail with "Budget exceeded"; user must top up at Profile → Universal Key → Add Balance

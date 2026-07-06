@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "../components/ui/dropdown-menu";
 import {
   ArrowLeft, Download, Mail, AlertTriangle, CheckCircle2, Sparkles,
-  Globe, Copy, Calendar, Wand2, Bot, Loader2, Swords, Trophy,
+  Globe, Copy, Calendar, Wand2, Bot, Loader2, Swords, Trophy, Share2, Monitor, Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -124,6 +124,13 @@ export default function Results() {
     toast.success(`Copied prompt for ${tool}`);
   };
 
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const publicUrl = scan ? `${window.location.origin}/public/scan/${scan.id}` : "";
+  const badgeUrl = scan ? `${API}/api/public/scans/${scan.id}/badge.svg` : "";
+  const embedCode = scan
+    ? `<a href="${publicUrl}" target="_blank" rel="noopener"><img src="${badgeUrl}" alt="GrowthLens Score ${scan.score ?? 0}/100" height="56"/></a>`
+    : "";
+
   if (loading) return <div className="max-w-6xl mx-auto"><Skeleton className="h-40 w-full"/></div>;
   if (!scan) return <div>Scan not found.</div>;
 
@@ -152,6 +159,18 @@ export default function Results() {
             </DropdownMenu>
           )}
           <Button variant="outline" size="sm" onClick={exportJson} data-testid="results-export-btn"><Download className="w-4 h-4 mr-2"/>Export JSON</Button>
+          {isBiz && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" data-testid="share-trigger"><Share2 className="w-4 h-4 mr-2"/>Share</Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => { copy(publicUrl); }} data-testid="share-copy-link">Copy public link</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { copy(embedCode); }} data-testid="share-copy-embed">Copy embed code</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.open(badgeUrl, "_blank")} data-testid="share-open-badge">Open badge SVG</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {!isBiz && <Link to={`/planner?scan=${id}`}><Button size="sm" data-testid="results-plan-btn"><Calendar className="w-4 h-4 mr-2"/>Build content plan</Button></Link>}
         </div>
       </div>
@@ -193,6 +212,62 @@ export default function Results() {
 
       {isBiz ? (
         <div className="grid md:grid-cols-2 gap-4">
+          {r.screenshots?.desktop && (
+            <div className="md:col-span-2">
+              <Section title="Annotated screenshots" tid="results-screenshots">
+                <Tabs defaultValue="desktop">
+                  <TabsList>
+                    <TabsTrigger value="desktop" data-testid="ss-tab-desktop"><Monitor className="w-3 h-3 mr-1"/>Desktop</TabsTrigger>
+                    <TabsTrigger value="mobile" data-testid="ss-tab-mobile"><Smartphone className="w-3 h-3 mr-1"/>Mobile</TabsTrigger>
+                  </TabsList>
+                  {["desktop", "mobile"].map(view => (
+                    <TabsContent key={view} value={view}>
+                      <div className="relative border border-border rounded overflow-hidden bg-muted/30" style={{ aspectRatio: view === "desktop" ? "4/3" : "1/2" }}>
+                        <img src={r.screenshots[view]} alt={`${view} screenshot`} className="absolute inset-0 w-full h-full object-cover object-top" onError={(e)=>{e.currentTarget.style.opacity="0.15";}}/>
+                        {(r.screenshot_annotations || []).map((a, i) => (
+                          <div
+                            key={i}
+                            className="absolute -translate-x-1/2 -translate-y-1/2 group"
+                            style={{ left: `${a.x_pct}%`, top: `${a.y_pct}%` }}
+                            data-testid={`annotation-${i}`}
+                          >
+                            <div className={`w-7 h-7 rounded-full grid place-items-center font-mono text-xs font-bold text-white ring-4 ring-background ${
+                              a.color === "red" ? "bg-accent" : a.color === "yellow" ? "bg-yellow-500" : "bg-primary"
+                            }`}>{i+1}</div>
+                            <div className="hidden group-hover:block absolute left-8 top-0 bg-background border border-border rounded p-2 text-xs w-56 shadow-lg z-10">
+                              <div className="font-semibold">{a.label}</div>
+                              <div className="text-muted-foreground mt-1">{a.note}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 grid md:grid-cols-2 gap-2">
+                        {(r.screenshot_annotations || []).map((a, i) => (
+                          <div key={i} className="flex gap-2 items-start text-sm border border-border rounded p-2 bg-background">
+                            <span className={`shrink-0 w-6 h-6 rounded-full grid place-items-center text-xs font-bold text-white ${
+                              a.color === "red" ? "bg-accent" : a.color === "yellow" ? "bg-yellow-500" : "bg-primary"
+                            }`}>{i+1}</span>
+                            <div><div className="font-medium">{a.label}</div><div className="text-xs text-muted-foreground">{a.note}</div></div>
+                          </div>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </Section>
+            </div>
+          )}
+          {(r.industry_insights || []).length > 0 && (
+            <div className="md:col-span-2">
+              <Section title={`Industry insights${r.industry_detected ? ` · ${r.industry_detected}` : ""}`} tid="results-industry">
+                <ul className="grid md:grid-cols-2 gap-2">
+                  {(r.industry_insights || []).map((x, i) => (
+                    <li key={i} className="flex gap-2 text-sm border border-border rounded p-3 bg-background"><Wand2 className="w-4 h-4 text-primary mt-0.5 shrink-0"/>{x}</li>
+                  ))}
+                </ul>
+              </Section>
+            </div>
+          )}
           <Section title="Top fixes (with copyable code)" tid="results-top-fixes">
             <div className="space-y-5">
               {(r.top_fixes || []).map((f, i) => <FixCard key={i} fix={f} i={i}/>)}

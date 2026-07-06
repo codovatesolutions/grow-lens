@@ -16,6 +16,7 @@ import Planner from "./pages/Planner";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import Billing from "./pages/Billing";
+import PublicScan from "./pages/PublicScan";
 
 function Protected({ children }) {
   const { user, loading } = useAuth();
@@ -34,6 +35,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/public/scan/:id" element={<PublicScan />} />
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />
             <Route path="/scan/new" element={<Protected><NewScan /></Protected>} />
             <Route path="/scan/:id" element={<Protected><Results /></Protected>} />
