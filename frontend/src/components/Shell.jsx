@@ -26,9 +26,12 @@ export default function Shell({ children }) {
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
-        <div className="px-6 py-5 border-b border-border flex items-center gap-2">
-          <Telescope className="w-5 h-5 text-primary" />
-          <span className="font-display text-lg font-bold tracking-tight">GrowthLens<span className="text-primary">.</span></span>
+        <div className="px-6 py-5 border-b border-border">
+          <div className="flex items-center gap-2">
+            <Telescope className="w-5 h-5 text-primary" />
+            <span className="font-display text-lg font-bold tracking-tight">GrowthLens<span className="text-primary">.</span></span>
+          </div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1 pl-7">by Codovate Solutions</div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {items.map((it) => (
@@ -62,6 +65,9 @@ export default function Shell({ children }) {
           >
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>
+          <div className="text-[10px] text-muted-foreground text-center mt-3 pt-3 border-t border-border">
+            © 2026 · A product of <span className="text-foreground font-semibold">Codovate Solutions</span>
+          </div>
         </div>
       </aside>
 

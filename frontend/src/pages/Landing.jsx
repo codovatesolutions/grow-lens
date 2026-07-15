@@ -46,8 +46,9 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-12 gap-10">
+      <section className="border-b border-border relative overflow-hidden">
+        <div className="hero-glow" />
+        <div className="max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-12 gap-10 relative z-10">
           <div className="md:col-span-7">
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-6">AI-powered growth analyst</div>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tighter">
@@ -154,8 +155,11 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-10 text-center text-xs text-muted-foreground">
-        © 2026 GrowthLens AI · Built for clarity over hype.
+      <footer className="py-10 text-center text-xs text-muted-foreground space-y-1">
+        <div>© 2026 GrowthLens AI · Built for clarity over hype.</div>
+        <div>
+          A product of <a href="#" className="font-semibold text-foreground hover:text-primary transition-colors">Codovate Solutions</a> · Built by Codovate Solutions
+        </div>
       </footer>
     </div>
   );
