@@ -155,10 +155,15 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="py-10 text-center text-xs text-muted-foreground space-y-1">
+      <footer className="py-10 text-center text-xs text-muted-foreground space-y-3">
         <div>© 2026 GrowthLens AI · Built for clarity over hype.</div>
-        <div>
-          A product of <a href="#" className="font-semibold text-foreground hover:text-primary transition-colors">Codovate Solutions</a> · Built by Codovate Solutions
+        <div className="flex items-center justify-center gap-2">
+          <span>A product of</span>
+          <a href="#" className="inline-flex items-center gap-1.5 font-semibold text-foreground hover:text-primary transition-colors">
+            <img src="/brand/codovate-logo.png" alt="Codovate Solutions" className="w-5 h-5 rounded" />
+            Codovate Solutions
+          </a>
+          <span>· Built by Codovate Solutions</span>
         </div>
       </footer>
     </div>

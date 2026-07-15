@@ -101,3 +101,97 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  User applied Codovate Solutions rebrand to GrowthLens AI (premium yellow palette + Codovate branding).
+  Reported bug: On mobile, an "Uncaught runtime errors" overlay appears with "Script error." at handleError.
+  Root cause suspected: PostHog analytics script (from previous Emergent template) was throwing cross-origin
+  script errors which CRA dev overlay was catching and displaying.
+
+frontend:
+  - task: "Remove PostHog + Emergent-branding scripts causing 'Script error.' runtime overlay"
+    implemented: true
+    working: true
+    file: "/app/frontend/public/index.html"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Removed emergent-main.js badge script AND the entire PostHog init script from public/index.html. Added Codovate favicon (/brand/codovate-logo.png). Updated title/description. This should eliminate the cross-origin 'Script error.' captured by CRA dev overlay."
+        - working: true
+          agent: "testing"
+          comment: "✅ PRIMARY BUG FIXED - Tested on both desktop (1920x800) and mobile (390x844 iPhone 12) viewports. NO 'Uncaught runtime errors' red overlay appears. NO 'Script error.' messages found. NO PostHog references (posthog, us.i.posthog.com) or Emergent references (emergent-main.js, assets.emergent.sh) detected in console, page errors, or network requests. Console and page errors are clean. The cross-origin script error issue is completely resolved."
+
+  - task: "Codovate Solutions rebrand — premium yellow palette + branding"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/index.css, /app/frontend/src/pages/Landing.jsx, /app/frontend/src/components/Shell.jsx"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Applied premium palette (#FDCE1A primary, #FDFCFA bg, #222121 charcoal, #FBE79F cream). Added hero-glow yellow blobs, updated landing footer + shell sidebar to show 'A product of Codovate Solutions · Built by Codovate Solutions' with logo image."
+        - working: true
+          agent: "testing"
+          comment: "✅ REBRAND VERIFIED - Landing page: Yellow primary CTA buttons (rgb(253, 208, 28) = #FDD01C ≈ #FDCE1A), warm cream background (#FDFCFA), charcoal headings (#222121). Hero section displays yellow soft glow blobs correctly. Footer shows '© 2026 GrowthLens AI · Built for clarity over hype.' AND 'A product of Codovate Solutions · Built by Codovate Solutions' with Codovate logo image (/brand/codovate-logo.png). Browser tab title: 'GrowthLens AI · by Codovate Solutions'. Favicon loads without 404. Dashboard sidebar: 'by Codovate Solutions' text under logo, Codovate logo image in sidebar, '© 2026 · Codovate Solutions' footer at bottom. Theme toggle works without errors, palette adapts correctly in dark mode. Signup flow works: successfully created test user and landed on /dashboard. All branding elements present and correct."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 2
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Remove PostHog + Emergent-branding scripts causing 'Script error.' runtime overlay"
+    - "Codovate Solutions rebrand — premium yellow palette + branding"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+      message: |
+        Please verify the frontend at https://grow-view.preview.emergentagent.com specifically:
+        1. Load the landing page in BOTH desktop (1920x800) AND mobile (iPhone 12 / 390x844) viewports.
+        2. Capture ALL browser console errors and page errors during load + interactions.
+        3. Confirm NO "Uncaught runtime errors" overlay appears (this is a CRA dev-overlay red screen).
+        4. Confirm NO "Script error." messages, NO posthog references, NO emergent-main.js references.
+        5. Confirm the yellow/charcoal Codovate palette is applied (yellow CTA buttons, warm cream bg).
+        6. Confirm "Codovate Solutions" appears in the landing footer WITH the small logo image next to it.
+        7. Click "Get started" → /signup, register a fresh test user, then verify dashboard sidebar shows
+           "by Codovate Solutions" under logo and Codovate credit at bottom of sidebar with logo icon.
+        8. Verify browser tab title reads "GrowthLens AI · by Codovate Solutions" and favicon loads (no 404).
+        9. Test both light and dark theme toggle — palette should remain consistent.
+        Report any red-overlay runtime errors seen; that is the primary bug to catch.
+    - agent: "testing"
+      message: |
+        ✅ ALL TESTS PASSED - Comprehensive verification complete on https://grow-view.preview.emergentagent.com
+        
+        PRIMARY BUG VERIFICATION (CRITICAL):
+        ✓ NO "Uncaught runtime errors" red overlay on desktop (1920x800) or mobile (390x844 iPhone 12)
+        ✓ NO "Script error." messages anywhere
+        ✓ NO PostHog references (posthog, us.i.posthog.com) in console/errors/network
+        ✓ NO Emergent references (emergent-main.js, assets.emergent.sh) in console/errors/network
+        ✓ Console logs clean, no page errors detected
+        
+        REBRAND VERIFICATION:
+        ✓ Landing page loads with yellow palette: primary buttons rgb(253, 208, 28) ≈ #FDCE1A
+        ✓ Hero section displays yellow soft glow blobs correctly
+        ✓ Browser tab title: "GrowthLens AI · by Codovate Solutions"
+        ✓ Favicon loads without 404: /brand/codovate-logo.png
+        ✓ Landing footer shows: "© 2026 GrowthLens AI · Built for clarity over hype."
+        ✓ Landing footer shows: "A product of Codovate Solutions · Built by Codovate Solutions" with logo image
+        ✓ Signup flow works: created test user (codovate.test+20260715143316@example.com), landed on /dashboard
+        ✓ Dashboard sidebar: "by Codovate Solutions" text under logo
+        ✓ Dashboard sidebar: Codovate logo image present (/brand/codovate-logo.png)
+        ✓ Dashboard sidebar: "© 2026 · Codovate Solutions" footer at bottom
+        ✓ Theme toggle works without console errors, palette adapts correctly in dark mode
+        
+        Test credentials saved to /app/memory/test_credentials.md
+        
+        RECOMMENDATION: Both tasks are working correctly. The primary bug (PostHog runtime error) is completely fixed. All Codovate branding elements are present and correct. Ready for production.

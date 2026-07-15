@@ -65,8 +65,9 @@ export default function Shell({ children }) {
           >
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>
-          <div className="text-[10px] text-muted-foreground text-center mt-3 pt-3 border-t border-border">
-            © 2026 · A product of <span className="text-foreground font-semibold">Codovate Solutions</span>
+          <div className="text-[10px] text-muted-foreground text-center mt-3 pt-3 border-t border-border flex items-center justify-center gap-1.5">
+            <img src="/brand/codovate-logo.png" alt="Codovate Solutions" className="w-3.5 h-3.5 rounded-sm" />
+            <span>© 2026 · <span className="text-foreground font-semibold">Codovate Solutions</span></span>
           </div>
         </div>
       </aside>
