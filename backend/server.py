@@ -614,6 +614,279 @@ async def root():
     return {"service": "GrowthLens AI", "ok": True}
 
 
+# ============================================================================
+# PHASE 1 — HOME DASHBOARD (11 widgets) + TASKS + AI ASSISTANT
+# ============================================================================
+
+
+class TaskPatch(BaseModel):
+    done: Optional[bool] = None
+
+
+class AssistantMsg(BaseModel):
+    role: Literal["user", "assistant"]
+    text: str
+
+
+class AssistantChatIn(BaseModel):
+    message: str
+    history: List[AssistantMsg] = []
+    session_id: Optional[str] = None
+
+
+async def _ensure_tasks_for_user(user_id: str):
+    """Auto-generate tasks from completed scan checklists (idempotent)."""
+    existing = await db.tasks.find({"user_id": user_id}, {"scan_id": 1, "checklist_index": 1, "_id": 0}).to_list(2000)
+    existing_keys = {(t.get("scan_id"), t.get("checklist_index")) for t in existing}
+    scans_cursor = db.scans.find({"user_id": user_id, "status": "complete"}, {"_id": 0}).sort("created_at", -1).limit(40)
+    scans = await scans_cursor.to_list(40)
+    to_insert = []
+    for s in scans:
+        checklist = ((s.get("result") or {}).get("checklist")) or []
+        for idx, item in enumerate(checklist[:7]):
+            key = (s["id"], idx)
+            if key in existing_keys:
+                continue
+            to_insert.append({
+                "id": str(uuid.uuid4()),
+                "user_id": user_id,
+                "scan_id": s["id"],
+                "scan_target": s.get("target"),
+                "scan_mode": s.get("mode"),
+                "checklist_index": idx,
+                "title": item if isinstance(item, str) else str(item),
+                "done": False,
+                "created_at": s.get("created_at") or datetime.now(timezone.utc).isoformat(),
+            })
+    if to_insert:
+        await db.tasks.insert_many(to_insert)
+
+
+def _score_color(score: int) -> str:
+    if score >= 75:
+        return "#16a34a"
+    if score >= 50:
+        return "#eab308"
+    return "#dc2626"
+
+
+@api.get("/tasks")
+async def list_tasks(user=Depends(current_user)):
+    await _ensure_tasks_for_user(user["id"])
+    tasks = await db.tasks.find({"user_id": user["id"]}, {"_id": 0}).sort([("done", 1), ("created_at", -1)]).limit(50).to_list(50)
+    return tasks
+
+
+@api.patch("/tasks/{task_id}")
+async def patch_task(task_id: str, body: TaskPatch, user=Depends(current_user)):
+    update = {}
+    if body.done is not None:
+        update["done"] = body.done
+        update["done_at"] = datetime.now(timezone.utc).isoformat() if body.done else None
+    if not update:
+        raise HTTPException(400, "Nothing to update")
+    res = await db.tasks.update_one({"id": task_id, "user_id": user["id"]}, {"$set": update})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Task not found")
+    doc = await db.tasks.find_one({"id": task_id}, {"_id": 0})
+    # log activity
+    if body.done:
+        await db.activity.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": user["id"],
+            "type": "task_done",
+            "title": f"Completed task: {doc['title'][:80]}",
+            "meta": {"task_id": task_id, "scan_id": doc.get("scan_id")},
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    return doc
+
+
+@api.get("/dashboard")
+async def dashboard(user=Depends(current_user)):
+    """Aggregated data for the 11 home-dashboard widgets."""
+    await _ensure_tasks_for_user(user["id"])
+    now = datetime.now(timezone.utc)
+    week_ago = (now - timedelta(days=7)).isoformat()
+    two_weeks_ago = (now - timedelta(days=14)).isoformat()
+
+    scans = await db.scans.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    complete = [s for s in scans if s.get("status") == "complete"]
+    biz = [s for s in complete if s.get("mode") == "business"]
+    cre = [s for s in complete if s.get("mode") == "creator"]
+
+    # Growth score = avg score across all complete scans
+    avg_score = round(sum(s.get("score", 0) for s in complete) / len(complete), 1) if complete else 0
+    # Revenue score (0-100) — economic-impact index; final module 6 replaces w/ real $
+    revenue_score = round(sum(min(s.get("score", 0), 100) * 1.0 for s in biz) / max(len(biz), 1), 1) if biz else 0
+
+    # Weekly deltas
+    this_week = [s for s in complete if s.get("created_at", "") >= week_ago]
+    last_week = [s for s in complete if two_weeks_ago <= s.get("created_at", "") < week_ago]
+    this_week_avg = round(sum(s.get("score", 0) for s in this_week) / len(this_week), 1) if this_week else 0
+    last_week_avg = round(sum(s.get("score", 0) for s in last_week) / len(last_week), 1) if last_week else 0
+    weekly_delta = round(this_week_avg - last_week_avg, 1)
+
+    # Growth trend (last 20 scans, chronological)
+    trend = []
+    for s in sorted(complete, key=lambda x: x.get("created_at", ""))[-20:]:
+        trend.append({
+            "date": (s.get("created_at") or "")[:10],
+            "score": s.get("score", 0),
+            "mode": s.get("mode"),
+            "target": (s.get("target") or "")[:40],
+        })
+
+    # Recent scans (last 6)
+    recent = [{
+        "id": s["id"],
+        "target": s.get("target"),
+        "mode": s.get("mode"),
+        "score": s.get("score", 0),
+        "status": s.get("status"),
+        "created_at": s.get("created_at"),
+    } for s in scans[:6]]
+
+    # Open tasks (top 5)
+    tasks_cur = await db.tasks.find({"user_id": user["id"], "done": False}, {"_id": 0}).sort("created_at", -1).limit(5).to_list(5)
+    tasks_total = await db.tasks.count_documents({"user_id": user["id"]})
+    tasks_done = await db.tasks.count_documents({"user_id": user["id"], "done": True})
+
+    # Team activity (last 8 events) — for solo user this is their own activity
+    # Ensure recent scan_created events exist
+    existing_activity_scan_ids = {a.get("meta", {}).get("scan_id") for a in await db.activity.find({"user_id": user["id"], "type": "scan_created"}).to_list(500)}
+    to_insert = []
+    for s in complete[:20]:
+        if s["id"] not in existing_activity_scan_ids:
+            to_insert.append({
+                "id": str(uuid.uuid4()),
+                "user_id": user["id"],
+                "type": "scan_created",
+                "title": f"Scanned {s.get('target', '')[:60]}",
+                "meta": {"scan_id": s["id"], "score": s.get("score", 0), "mode": s.get("mode")},
+                "created_at": s.get("created_at"),
+            })
+    if to_insert:
+        await db.activity.insert_many(to_insert)
+    activity = await db.activity.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(8).to_list(8)
+
+    # Competitor alerts (from scans with comparison)
+    alerts = []
+    for s in complete:
+        cmp = s.get("comparison")
+        if not cmp:
+            continue
+        my = ((cmp.get("overall") or {}).get("mine")) or 0
+        th = ((cmp.get("overall") or {}).get("competitor")) or 0
+        if th > my:
+            alerts.append({
+                "scan_id": s["id"],
+                "target": s.get("target"),
+                "competitor_url": cmp.get("competitor_url"),
+                "diff": th - my,
+                "my_score": my,
+                "their_score": th,
+                "verdict": cmp.get("verdict", ""),
+            })
+    alerts.sort(key=lambda x: -x["diff"])
+    alerts = alerts[:4]
+
+    # AI recommendations — top 5 fixes by priority across latest scans
+    priority_weight = {"high": 3, "medium": 2, "low": 1}
+    recs = []
+    for s in complete[:10]:
+        fixes = ((s.get("result") or {}).get("top_fixes")) or []
+        for f in fixes:
+            recs.append({
+                "title": f.get("title"),
+                "why": f.get("why"),
+                "priority": f.get("priority", "medium"),
+                "scan_id": s["id"],
+                "scan_target": s.get("target"),
+                "_w": priority_weight.get((f.get("priority") or "medium").lower(), 2),
+            })
+    recs.sort(key=lambda x: (-x["_w"]))
+    recs = [{k: v for k, v in r.items() if not k.startswith("_")} for r in recs[:5]]
+
+    # Weekly improvements
+    weekly = {
+        "this_week_scans": len(this_week),
+        "last_week_scans": len(last_week),
+        "this_week_avg_score": this_week_avg,
+        "last_week_avg_score": last_week_avg,
+        "delta": weekly_delta,
+    }
+
+    return {
+        "user": {"name": user.get("name"), "email": user.get("email")},
+        "totals": {
+            "total_scans": len(scans),
+            "complete_scans": len(complete),
+            "business_scans": len(biz),
+            "creator_scans": len(cre),
+            "leads": sum(len((s.get("result") or {}).get("leads", []) or []) for s in biz),
+        },
+        "growth_score": avg_score,
+        "revenue_score": revenue_score,
+        "open_tasks": tasks_cur,
+        "tasks_summary": {"total": tasks_total, "done": tasks_done, "open": tasks_total - tasks_done},
+        "activity": activity,
+        "competitor_alerts": alerts,
+        "weekly": weekly,
+        "recent_scans": recent,
+        "growth_trend": trend,
+        "ai_recommendations": recs,
+    }
+
+
+ASSISTANT_SYS = """You are the GrowthLens AI Assistant — a helpful growth consultant.
+You have access to the user's recent scan summaries. Answer their questions concisely
+(2-4 short paragraphs max, use plain English, no jargon). If they ask about a specific
+scan you don't have context on, ask them to share the URL or scan ID. Never invent scan
+data — only reference what you're given. When giving recommendations, be specific and
+actionable (name exact CTA text, exact section, exact next step)."""
+
+
+@api.post("/assistant/chat")
+async def assistant_chat(body: AssistantChatIn, user=Depends(current_user)):
+    # Pull last 5 complete scans as context
+    scans = await db.scans.find(
+        {"user_id": user["id"], "status": "complete"}, {"_id": 0}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    context_lines = []
+    for s in scans:
+        r = s.get("result") or {}
+        context_lines.append(
+            f"- {s.get('mode', '?').upper()} · {s.get('target', '')[:80]} · score={s.get('score', 0)}/100 · summary: {(r.get('summary') or '')[:180]}"
+        )
+    ctx_block = "\n".join(context_lines) if context_lines else "(no scans yet — advise them to run their first scan at /scan/new)"
+    history_text = ""
+    for m in (body.history or [])[-6:]:
+        role_prefix = "USER" if m.role == "user" else "ASSISTANT"
+        history_text += f"\n{role_prefix}: {m.text}"
+
+    session_id = body.session_id or f"assistant_{user['id']}"
+    system_message = (
+        ASSISTANT_SYS
+        + f"\n\nUser's name: {user.get('name')}. Recent scans:\n{ctx_block}"
+    )
+    user_text = f"CONVERSATION SO FAR:{history_text}\n\nUSER: {body.message}\nASSISTANT:"
+
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=session_id,
+            system_message=system_message,
+        ).with_model("gemini", "gemini-3-flash-preview")
+        resp = await chat.send_message(UserMessage(text=user_text))
+        text = resp if isinstance(resp, str) else str(resp)
+    except Exception as e:
+        log.exception("assistant chat failed")
+        raise HTTPException(500, f"Assistant error: {e}")
+
+    return {"reply": text.strip(), "session_id": session_id}
+
+
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,

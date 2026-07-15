@@ -195,3 +195,148 @@ agent_communication:
         Test credentials saved to /app/memory/test_credentials.md
         
         RECOMMENDATION: Both tasks are working correctly. The primary bug (PostHog runtime error) is completely fixed. All Codovate branding elements are present and correct. Ready for production.
+
+# ============================================================================
+# Phase 1 — Home Dashboard (11 widgets) — new backend + frontend
+# ============================================================================
+
+backend:
+  - task: "Phase 1 — new endpoints /api/dashboard, /api/tasks, /api/tasks/{id} PATCH, /api/assistant/chat"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: |
+            Added:
+            - GET /api/dashboard — aggregated widget data (growth_score, revenue_score,
+              open_tasks, tasks_summary, activity, competitor_alerts, weekly, recent_scans,
+              growth_trend, ai_recommendations, totals, user)
+            - GET /api/tasks — auto-generates tasks from scan checklists (idempotent)
+            - PATCH /api/tasks/{task_id} body {done:bool} — toggles, logs task_done activity
+            - POST /api/assistant/chat body {message, history[], session_id?} — Gemini 3
+              Flash chat with last-5-scans context injected into system prompt
+            Uses existing EMERGENT_LLM_KEY + emergentintegrations. All JWT-protected.
+        - working: true
+          agent: "testing"
+          comment: |
+            ✅ ALL 9 PHASE 1 BACKEND TESTS PASSED
+            
+            Test Results (executed in order):
+            1. ✅ POST /api/auth/login → Token received (0.57s)
+            2. ✅ GET /api/dashboard (initial) → All 12 required keys present, correctly handles user with 0 scans (growth_score: 0, revenue_score: 0, tasks_summary: {total: 0, done: 0, open: 0})
+            3. ✅ GET /api/tasks (initial) → Returns empty list correctly (0.11s)
+            4. ✅ POST /api/scans → Scan completed successfully (27.51s, scan_id: 73b102a1-a592-4f63-8763-70836f39b138, score: 25, status: "complete", result object present)
+            5. ✅ GET /api/tasks (after scan) → 7 tasks auto-generated from scan checklist, all have correct scan_id (0.15s)
+            6. ✅ PATCH /api/tasks/{id} → Task marked as done successfully, done=true in response (0.16s)
+            7. ✅ GET /api/dashboard (after updates) → All verifications passed (0.10s):
+               - recent_scans contains new scan ✓
+               - growth_score > 0 (25.0) ✓
+               - tasks_summary correct (total: 7, done: 1, open: 6) ✓
+               - activity has both "scan_created" AND "task_done" events ✓
+               - growth_trend has 1 entry with date and score ✓
+               - ai_recommendations has 5 entries with all required keys (title, why, priority, scan_id) ✓
+            8. ✅ POST /api/assistant/chat (first message) → Received 886 char reply (5.36s), Gemini 3 Flash integration working
+            9. ✅ POST /api/assistant/chat (follow-up) → Received 588 char reply with conversation history context (3.69s)
+            
+            Key Findings:
+            - All endpoints return correct status codes (200)
+            - Dashboard correctly handles edge case of 0 scans (no 500 errors)
+            - Task auto-generation from scan checklists working (idempotent, up to 7 tasks per scan)
+            - Activity logging working (scan_created and task_done events)
+            - Growth trend calculation working
+            - AI recommendations extraction working
+            - Gemini 3 Flash LLM integration working (EMERGENT_LLM_KEY)
+            - AI Assistant maintains conversation history correctly
+            - All response times acceptable (scan: ~28s, chat: 3-6s, other endpoints: <1s)
+            
+            NO ISSUES FOUND. All Phase 1 backend endpoints are production-ready.
+
+frontend_phase1:
+  - task: "Phase 1 — Home Dashboard with 11 widgets (Dashboard.jsx rewrite)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Rewrote Dashboard with 11 widgets. Uses recharts LineChart for growth trend, custom SVG ScoreGauge for revenue/growth. AI Assistant chat widget calls /api/assistant/chat. Task toggle calls PATCH /api/tasks/{id}. Screenshot-verified visually — no console errors on load."
+
+test_plan_phase1:
+  current_focus:
+    - "Phase 1 — new endpoints /api/dashboard, /api/tasks, /api/tasks/{id} PATCH, /api/assistant/chat"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication_phase1:
+    - agent: "main"
+      message: |
+        Please test the Phase 1 BACKEND endpoints on the running backend (base URL is REACT_APP_BACKEND_URL). Use existing credentials from /app/memory/test_credentials.md:
+          email: codovate.test+20260715143316@example.com
+          password: TestPass123!
+
+        Tests to run in order (curl/httpx OK):
+          1) POST /api/auth/login → get JWT token
+          2) GET /api/dashboard → 200, response contains keys:
+             user, totals, growth_score, revenue_score, open_tasks, tasks_summary,
+             activity, competitor_alerts, weekly, recent_scans, growth_trend,
+             ai_recommendations. MUST NOT 500 even for a user with 0 scans.
+          3) GET /api/tasks → 200, list (may be empty)
+          4) POST /api/scans body {"mode":"business","target":"https://example.com","industry":"auto"}
+             → will take ~20-40s (Gemini 3 Flash call). Expect status:"complete" in response.
+          5) GET /api/tasks → 200, list should now include auto-generated tasks
+             from the new scan's checklist (up to 7 items)
+          6) PATCH /api/tasks/{first_task_id} body {"done":true} → 200, task.done == true
+          7) GET /api/dashboard again → verify:
+                - recent_scans has the new scan
+                - growth_score > 0
+                - tasks_summary.done >= 1 and tasks_summary.total >= 1
+                - activity has scan_created AND task_done events (at least 1 each)
+                - growth_trend has at least 1 point
+                - ai_recommendations has at least 1 entry
+          8) POST /api/assistant/chat body {"message":"What should I fix first on my site?","history":[]}
+             → 200, non-empty "reply" string. Uses Emergent LLM key.
+             Test a follow-up: POST /api/assistant/chat body {"message":"Give me one concrete action","history":[{"role":"user","text":"What should I fix first on my site?"},{"role":"assistant","text":"<previous reply>"}]}
+             → 200, non-empty reply that references prior turn.
+
+        Report any 5xx errors, missing keys, slow endpoints, or LLM failures.
+    - agent: "testing"
+      message: |
+        ✅ PHASE 1 BACKEND TESTING COMPLETE - ALL TESTS PASSED (9/9)
+        
+        Comprehensive testing completed on all Phase 1 backend endpoints. Created /app/backend_test.py
+        and executed full test suite against https://grow-view.preview.emergentagent.com/api
+        
+        Test Results Summary:
+        • Authentication: ✅ Working (JWT token generation)
+        • Dashboard endpoint: ✅ Working (all 12 keys present, handles 0 scans correctly)
+        • Tasks endpoint: ✅ Working (auto-generation from scan checklists working)
+        • Scans endpoint: ✅ Working (Gemini 3 Flash integration successful, ~28s response time)
+        • Task PATCH endpoint: ✅ Working (task completion + activity logging)
+        • AI Assistant chat: ✅ Working (conversation history maintained, 3-6s response time)
+        
+        Key Validations:
+        ✓ Dashboard returns all required keys even with 0 scans (no 500 errors)
+        ✓ Task auto-generation creates up to 7 tasks per scan from checklist
+        ✓ Activity logging captures both scan_created and task_done events
+        ✓ Growth trend calculation working correctly
+        ✓ AI recommendations extraction working (5 recommendations from scan)
+        ✓ Gemini 3 Flash LLM integration working (EMERGENT_LLM_KEY configured correctly)
+        ✓ AI Assistant maintains conversation context across multiple turns
+        
+        Performance:
+        • Auth/Dashboard/Tasks: <1s response time
+        • Scan creation: ~28s (expected for LLM analysis)
+        • AI chat: 3-6s per message (expected for LLM)
+        
+        NO CRITICAL ISSUES FOUND. All Phase 1 backend endpoints are production-ready.
+        
+        RECOMMENDATION: Main agent should now summarize Phase 1 completion and finish.
