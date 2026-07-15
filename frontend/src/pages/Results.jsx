@@ -11,6 +11,8 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import {
   ArrowLeft, Download, Mail, AlertTriangle, CheckCircle2, Sparkles,
   Globe, Copy, Calendar, Wand2, Bot, Loader2, Swords, Trophy, Share2, Monitor, Smartphone,
+  Users, TrendingDown, DollarSign, Crown, Zap, Brain, ShieldCheck, PenTool, Target,
+  Megaphone, HeartPulse, Tag, Accessibility, LineChart as LineChartIcon, Gauge, Rocket, Swords as SwordsIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -27,8 +29,7 @@ const Section = ({ title, children, tid, action }) => (
 const PRIO = {
   high: "bg-accent/15 text-accent border-accent/30",
   medium: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
-  low: "bg-primary/15 text-primary border-primary/30",
-};
+  low: "bg-primary/15 text-primary border-primary/30",};
 
 const SUBSCORE_KEYS = [
   ["trust", "Trust"], ["conversion", "Conversion"], ["ux", "UX"],
@@ -36,6 +37,69 @@ const SUBSCORE_KEYS = [
 ];
 
 const barColor = (v) => v >= 75 ? "bg-primary" : v >= 50 ? "bg-yellow-500" : "bg-accent";
+
+// AI Growth Team agent config (order + icons must match backend agent keys)
+const AGENT_ICONS = {
+  ux_expert: Users,
+  seo_expert: LineChartIcon,
+  brand_expert: ShieldCheck,
+  copywriter: PenTool,
+  sales_expert: Target,
+  marketing_expert: Megaphone,
+  customer_psychologist: HeartPulse,
+  pricing_expert: Tag,
+  accessibility_expert: Accessibility,
+  analytics_expert: Gauge,
+  performance_engineer: Zap,
+  growth_hacker: Rocket,
+  competitor_analyst: SwordsIcon,
+};
+
+const IMPACT_COLOR = {
+  high: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+  medium: "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
+  low: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+};
+
+function ExpertCard({ e }) {
+  const Icon = AGENT_ICONS[e.agent_key] || Brain;
+  return (
+    <div className="border border-border bg-card rounded-lg p-4 hover:border-primary/40 transition" data-testid={`expert-${e.agent_key}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded-md bg-primary/15 grid place-items-center">
+          <Icon className="w-4 h-4 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <div className="font-display text-sm font-bold truncate">{e.agent_name}</div>
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">{e.specialty}</div>
+        </div>
+      </div>
+      <p className="text-sm leading-relaxed text-foreground/90">{e.opinion}</p>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+        <div>
+          <div className="text-muted-foreground">Confidence</div>
+          <div className="font-mono font-semibold">{e.confidence ?? 0}%</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">Impact</div>
+          <span className={`inline-block px-1.5 py-0.5 border rounded text-[10px] uppercase font-semibold ${IMPACT_COLOR[(e.impact || "medium").toLowerCase()] || IMPACT_COLOR.medium}`}>{e.impact}</span>
+        </div>
+        <div>
+          <div className="text-muted-foreground">Priority</div>
+          <div className="font-mono font-semibold">#{e.priority ?? 3}</div>
+        </div>
+      </div>
+      <div className="mt-3 pt-3 border-t border-border">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Recommendation</div>
+        <div className="text-sm">{e.recommendation}</div>
+      </div>
+      <div className="mt-2 flex items-center justify-between text-[11px]">
+        <span className="text-muted-foreground">Est. revenue lift</span>
+        <span className="font-mono font-semibold text-primary">+{e.estimated_revenue_gain_pct ?? 0}%</span>
+      </div>
+    </div>
+  );
+}
 
 function CodeBlock({ label, code, testId }) {
   if (!code) return null;
@@ -85,6 +149,20 @@ export default function Results() {
   const [loading, setLoading] = useState(true);
   const [compUrl, setCompUrl] = useState("");
   const [comparing, setComparing] = useState(false);
+  const [runningTeam, setRunningTeam] = useState(false);
+
+  const runGrowthTeam = async () => {
+    setRunningTeam(true);
+    try {
+      const { data } = await api.post(`/scans/${id}/growth-team`);
+      setScan((s) => ({ ...s, growth_team: data.growth_team, revenue_leak: data.revenue_leak }));
+      toast.success("AI Growth Team briefing ready");
+    } catch (e) {
+      toast.error(e.response?.data?.detail || "Growth Team failed");
+    } finally {
+      setRunningTeam(false);
+    }
+  };
 
   useEffect(() => {
     api.get(`/scans/${id}`).then(r => setScan(r.data)).finally(() => setLoading(false));
@@ -209,6 +287,159 @@ export default function Results() {
           })}
         </div>
       )}
+
+      {/* ===== PHASE 2: AI GROWTH TEAM + REVENUE LEAK ENGINE ===== */}
+      {isBiz && (
+        <div data-testid="growth-team-block">
+          {!scan.growth_team ? (
+            <div className="border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl p-6 md:p-8 text-center relative overflow-hidden">
+              <div className="hero-glow" />
+              <div className="relative z-10 max-w-2xl mx-auto">
+                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-primary font-semibold">
+                  <Crown className="w-3.5 h-3.5" />New — AI Growth Team ⭐⭐⭐⭐⭐
+                </div>
+                <h2 className="font-display text-2xl md:text-3xl font-bold mt-3">
+                  Convene your board of 13 AI experts
+                </h2>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
+                  UX · SEO · Brand · Copy · Sales · Marketing · CX Psych · Pricing · A11y · Analytics · Performance · Growth Hacker · Competitor Analyst.
+                  CEO AI synthesizes everything and the Revenue Leak Engine estimates dollars-lost per month.
+                </p>
+                <Button size="lg" onClick={runGrowthTeam} disabled={runningTeam} className="mt-5 gap-2" data-testid="run-growth-team-btn">
+                  {runningTeam ? <><Loader2 className="w-4 h-4 animate-spin" />Convening board…</> : <><Crown className="w-4 h-4" />Run AI Growth Team</>}
+                </Button>
+                {runningTeam && <div className="text-xs text-muted-foreground mt-3">13 experts working in parallel + CEO synthesis + Revenue Leak analysis. ~30–60 seconds.</div>}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              {/* Executive summary */}
+              {scan.growth_team.executive_summary && (
+                <div className="border border-primary/40 bg-gradient-to-br from-primary/10 to-transparent rounded-xl p-5 md:p-6" data-testid="ceo-summary">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Crown className="w-4 h-4 text-primary" />
+                    <div className="text-xs uppercase tracking-[0.25em] text-primary font-bold">CEO AI · Executive Summary</div>
+                  </div>
+                  <h3 className="font-display text-xl md:text-2xl font-bold leading-tight">
+                    {scan.growth_team.executive_summary.verdict}
+                  </h3>
+                  <div className="grid md:grid-cols-3 gap-4 mt-5">
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-semibold">Biggest Opportunity</div>
+                      <div className="text-sm mt-1 leading-relaxed">{scan.growth_team.executive_summary.biggest_opportunity}</div>
+                    </div>
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-red-600 dark:text-red-400 font-semibold">Biggest Risk</div>
+                      <div className="text-sm mt-1 leading-relaxed">{scan.growth_team.executive_summary.biggest_risk}</div>
+                    </div>
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Board Metrics</div>
+                      <div className="mt-2 space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-muted-foreground">Consensus</span><span className="font-mono font-semibold">{scan.growth_team.executive_summary.consensus_score}%</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Confidence</span><span className="font-mono font-semibold">{scan.growth_team.executive_summary.board_confidence}%</span></div>
+                        <div className="flex justify-between"><span className="text-muted-foreground">Total lift</span><span className="font-mono font-semibold text-primary">+{scan.growth_team.executive_summary.estimated_total_monthly_lift_pct}%</span></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5">
+                    <div className="text-xs uppercase tracking-widest text-muted-foreground font-semibold mb-2">Top 3 Moves</div>
+                    <div className="grid md:grid-cols-3 gap-3">
+                      {(scan.growth_team.executive_summary.top_3_moves || []).map((m, i) => (
+                        <div key={i} className="border border-border bg-card rounded-lg p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground grid place-items-center text-xs font-bold font-mono">{i + 1}</span>
+                            <span className="font-semibold text-sm truncate">{m.title}</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{m.why}</p>
+                          <div className="mt-2 flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">{m.owner}</span>
+                            <span className="font-mono font-semibold text-primary">+{m.expected_revenue_lift_pct}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Revenue Leak Engine */}
+              {scan.revenue_leak && (
+                <div className="border border-red-500/30 bg-gradient-to-br from-red-500/10 via-transparent to-primary/5 rounded-xl p-5 md:p-6" data-testid="revenue-leak">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingDown className="w-4 h-4 text-red-600" />
+                    <div className="text-xs uppercase tracking-[0.25em] text-red-600 font-bold">Revenue Leak Engine</div>
+                    <span className="ml-auto text-[10px] text-muted-foreground">Confidence {scan.revenue_leak.confidence_score}%</span>
+                  </div>
+                  <div className="grid md:grid-cols-4 gap-3">
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Monthly Revenue Lost</div>
+                      <div className="font-display text-3xl font-black text-red-600 mt-1">${(scan.revenue_leak.monthly_revenue_lost_usd ?? 0).toLocaleString()}</div>
+                    </div>
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Lead Loss</div>
+                      <div className="font-display text-3xl font-black mt-1">{(scan.revenue_leak.lead_loss_pct ?? 0).toFixed(0)}%</div>
+                    </div>
+                    <div className="border border-border bg-card rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Bounce Increase</div>
+                      <div className="font-display text-3xl font-black mt-1">{(scan.revenue_leak.bounce_increase_pct ?? 0).toFixed(0)}%</div>
+                    </div>
+                    <div className="border border-primary/30 bg-primary/10 rounded-lg p-4">
+                      <div className="text-[10px] uppercase tracking-widest text-primary font-semibold">Potential After Fix</div>
+                      <div className="font-display text-3xl font-black text-primary mt-1">${(scan.revenue_leak.potential_revenue_after_fix_usd ?? 0).toLocaleString()}</div>
+                      <div className="text-[11px] text-muted-foreground mt-1">+${(scan.revenue_leak.monthly_lift_usd ?? 0).toLocaleString()} /month lift</div>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-3 gap-3 mt-4 text-xs">
+                    <div><span className="text-muted-foreground">Visitors/mo</span><div className="font-mono font-semibold">{(scan.revenue_leak.assumed_monthly_visitors ?? 0).toLocaleString()}</div></div>
+                    <div><span className="text-muted-foreground">Conversion</span><div className="font-mono font-semibold">{(scan.revenue_leak.assumed_current_conversion_pct ?? 0).toFixed(1)}%</div></div>
+                    <div><span className="text-muted-foreground">Avg order value</span><div className="font-mono font-semibold">${(scan.revenue_leak.assumed_avg_order_value_usd ?? 0).toFixed(0)}</div></div>
+                  </div>
+
+                  {(scan.revenue_leak.breakdown || []).length > 0 && (
+                    <div className="mt-4 space-y-2">
+                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Where the money leaks</div>
+                      {(scan.revenue_leak.breakdown || []).map((b, i) => (
+                        <div key={i} className="flex items-start justify-between gap-3 border border-border bg-card rounded p-3">
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium">{b.issue}</div>
+                            <div className="text-[11px] text-muted-foreground mt-0.5">{b.why}</div>
+                          </div>
+                          <div className="font-mono font-bold text-red-600 shrink-0">-${(b.monthly_loss_usd ?? 0).toLocaleString()}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {scan.revenue_leak.methodology && (
+                    <div className="mt-4 text-[11px] text-muted-foreground italic border-t border-border pt-3">
+                      Methodology: {scan.revenue_leak.methodology}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* 13 Expert cards */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    <h3 className="font-display text-lg font-bold">The 13 Expert Panel</h3>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={runGrowthTeam} disabled={runningTeam} data-testid="rerun-growth-team">
+                    {runningTeam ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Wand2 className="w-3.5 h-3.5 mr-1" />}
+                    Re-run
+                  </Button>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3" data-testid="experts-grid">
+                  {(scan.growth_team.experts || []).map((e) => <ExpertCard key={e.agent_key} e={e} />)}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      {/* ===== END PHASE 2 ===== */}
 
       {isBiz ? (
         <div className="grid md:grid-cols-2 gap-4">

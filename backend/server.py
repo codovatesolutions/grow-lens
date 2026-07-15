@@ -887,6 +887,314 @@ async def assistant_chat(body: AssistantChatIn, user=Depends(current_user)):
     return {"reply": text.strip(), "session_id": session_id}
 
 
+# ============================================================================
+# PHASE 2 — AI GROWTH TEAM (13 experts + CEO) + REVENUE LEAK ENGINE
+# ============================================================================
+
+GROWTH_TEAM_AGENTS = [
+    {
+        "key": "ux_expert",
+        "name": "UX Expert",
+        "specialty": "User experience, information architecture, page flow, mobile UX",
+        "system": "You are a Senior UX Expert. Focus ONLY on usability, information hierarchy, mobile/responsive fit, friction points, and page flow. Ignore SEO/copywriting/branding — other experts handle those. Be blunt and specific.",
+    },
+    {
+        "key": "seo_expert",
+        "name": "SEO Expert",
+        "specialty": "Rankings, on-page SEO, schema, meta, headings, keyword targeting",
+        "system": "You are a Senior SEO Expert. Focus ONLY on rankings — meta tags, H1/H2 structure, internal linking, schema markup, keyword targeting, content depth, and technical SEO signals visible from the scraped data.",
+    },
+    {
+        "key": "brand_expert",
+        "name": "Brand Expert",
+        "specialty": "Brand perception, positioning, visual identity, trust signals",
+        "system": "You are a Senior Brand Strategist. Focus ONLY on brand perception, positioning clarity, visual identity consistency, tone-of-voice, and how the brand shows up on the page.",
+    },
+    {
+        "key": "copywriter",
+        "name": "Copywriter",
+        "specialty": "Messaging, hero copy, CTAs, value proposition wording",
+        "system": "You are a Senior Direct-Response Copywriter. Focus ONLY on the words — hero headline, subheadline, CTA text, value prop, feature descriptions. Suggest sharper rewrites.",
+    },
+    {
+        "key": "sales_expert",
+        "name": "Sales Expert",
+        "specialty": "Conversion, objection handling, purchase intent, funnel design",
+        "system": "You are a Senior B2B/B2C Sales Consultant. Focus ONLY on conversion — objection handling, purchase-intent signals, trust proofs at decision moments, and funnel design.",
+    },
+    {
+        "key": "marketing_expert",
+        "name": "Marketing Expert",
+        "specialty": "Positioning, messaging-market fit, campaigns, top-of-funnel",
+        "system": "You are a Senior Marketing Strategist. Focus ONLY on positioning-market fit, campaign angles, top-of-funnel messaging, and category framing.",
+    },
+    {
+        "key": "customer_psychologist",
+        "name": "Customer Psychologist",
+        "specialty": "Buyer behavior, emotional triggers, cognitive biases, trust building",
+        "system": "You are a Consumer Psychologist. Focus ONLY on buyer behavior, emotional triggers (fear, aspiration, social proof), cognitive biases at play, and where the site loses trust.",
+    },
+    {
+        "key": "pricing_expert",
+        "name": "Pricing Expert",
+        "specialty": "Pricing anchoring, tier structure, value framing",
+        "system": "You are a Pricing Strategist. Focus ONLY on pricing anchoring, tier structure, price framing, and value communication. If no pricing visible, comment on the risk of not showing prices.",
+    },
+    {
+        "key": "accessibility_expert",
+        "name": "Accessibility Expert",
+        "specialty": "WCAG, keyboard nav, color contrast, screen reader semantics",
+        "system": "You are an Accessibility Expert (WCAG 2.2). Focus ONLY on a11y — color contrast, keyboard navigation, semantic HTML, alt text, ARIA, focus states.",
+    },
+    {
+        "key": "analytics_expert",
+        "name": "Analytics Expert",
+        "specialty": "Tracking, event instrumentation, KPI visibility",
+        "system": "You are an Analytics Consultant. Focus ONLY on measurement — event tracking gaps, KPI visibility, funnel instrumentation, and what data they're likely missing.",
+    },
+    {
+        "key": "performance_engineer",
+        "name": "Performance Engineer",
+        "specialty": "Page speed, Core Web Vitals, asset optimization",
+        "system": "You are a Web Performance Engineer. Focus ONLY on speed — Core Web Vitals, image optimization, JS bloat, render-blocking resources visible from HTML.",
+    },
+    {
+        "key": "growth_hacker",
+        "name": "Growth Hacker",
+        "specialty": "Viral loops, referral, product-led growth, activation",
+        "system": "You are a Growth Hacker. Focus ONLY on growth loops — referral mechanics, viral hooks, activation moments, and product-led growth signals.",
+    },
+    {
+        "key": "competitor_analyst",
+        "name": "Competitor Analyst",
+        "specialty": "Category positioning, differentiation, market gaps",
+        "system": "You are a Competitive Intelligence Analyst. Focus ONLY on how this business is likely positioned vs competitors — differentiation gaps, category conventions being violated or missed.",
+    },
+]
+
+
+EXPERT_JSON_SCHEMA = """{
+  "opinion": "<2-3 sentence blunt professional opinion from YOUR specialty ONLY>",
+  "confidence": <0-100 how confident you are in your read>,
+  "impact": "high|medium|low",
+  "priority": <1-5 where 1 is do-this-first>,
+  "recommendation": "<one specific, actionable next step in your specialty>",
+  "estimated_revenue_gain_pct": <0-30 estimated % monthly revenue lift if this fix ships>,
+  "risk_if_ignored": "<one short sentence>"
+}"""
+
+
+def _build_scan_context_for_agents(scan: dict) -> str:
+    """Compact context payload sent to every agent (< 3000 chars)."""
+    r = scan.get("result") or {}
+    scraped = r.get("scraped") or {}
+    ctx = {
+        "url": scan.get("target"),
+        "industry_detected": r.get("industry_detected"),
+        "overall_score": scan.get("score"),
+        "subscores": r.get("subscores"),
+        "summary": r.get("summary"),
+        "strengths": r.get("strengths"),
+        "top_fixes_titles": [f.get("title") for f in (r.get("top_fixes") or [])],
+        "trust_gaps": r.get("trust_gaps"),
+        "cta_issues": r.get("cta_issues"),
+        "seo_issues": r.get("seo_issues"),
+        "mobile_issues": r.get("mobile_issues"),
+        "title": scraped.get("title"),
+        "meta_description": scraped.get("meta_description"),
+        "has_https": scraped.get("has_https"),
+        "has_viewport": scraped.get("has_viewport"),
+        "social_links": scraped.get("social_links"),
+        "emails_found": scraped.get("emails_found"),
+        "phones_found": scraped.get("phones_found"),
+    }
+    return json.dumps(ctx, ensure_ascii=False)[:3000]
+
+
+async def _run_single_agent(agent: dict, ctx: str, scan_id: str) -> dict:
+    """Run one specialist agent — returns dict with agent_key/name + LLM JSON."""
+    system = (
+        agent["system"]
+        + "\n\nRespond with ONLY a JSON object matching this exact schema:\n"
+        + EXPERT_JSON_SCHEMA
+        + "\n\nNever invent scan data — only reason from what's given."
+    )
+    user_text = f"SCAN CONTEXT:\n{ctx}\n\nProvide your JSON response now."
+    session_id = f"{scan_id}_{agent['key']}"
+    try:
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=session_id,
+            system_message=system,
+        ).with_model("gemini", "gemini-3-flash-preview")
+        resp = await chat.send_message(UserMessage(text=user_text))
+        raw = resp if isinstance(resp, str) else str(resp)
+        raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip(), flags=re.MULTILINE)
+        m = re.search(r"\{[\s\S]*\}", raw)
+        parsed = json.loads(m.group(0)) if m else {}
+    except Exception as e:
+        log.exception(f"agent {agent['key']} failed")
+        parsed = {
+            "opinion": f"(Agent unavailable: {e})",
+            "confidence": 0,
+            "impact": "low",
+            "priority": 5,
+            "recommendation": "Retry later",
+            "estimated_revenue_gain_pct": 0,
+            "risk_if_ignored": "",
+        }
+    return {
+        "agent_key": agent["key"],
+        "agent_name": agent["name"],
+        "specialty": agent["specialty"],
+        **parsed,
+    }
+
+
+CEO_SYS = """You are the CEO AI — the head of GrowthLens's AI Growth Team.
+You have received opinions from 13 specialist experts (UX, SEO, Brand, Copywriter,
+Sales, Marketing, Consumer Psychology, Pricing, Accessibility, Analytics, Performance,
+Growth Hacker, Competitor Analyst). Your job is to synthesize their input into a
+sharp executive decision. Do NOT rehash every expert — surface only what matters.
+Be decisive. Output strictly valid JSON only."""
+
+
+CEO_PROMPT = """Below is the site context, followed by the 13 expert opinions.
+Synthesize an executive decision as JSON:
+
+{{
+  "verdict": "<2-3 sentence executive verdict on the site's biggest lever>",
+  "biggest_opportunity": "<one sentence — the single fix with the highest ROI>",
+  "biggest_risk": "<one sentence — the biggest risk if they change nothing>",
+  "top_3_moves": [
+    {{"title":"<short>", "why":"<1 sentence>", "owner":"<which expert leads this>", "expected_revenue_lift_pct": <0-40>}}
+  ],
+  "consensus_score": <0-100 how aligned the 13 experts are>,
+  "board_confidence": <0-100 overall confidence in the plan>,
+  "estimated_total_monthly_lift_pct": <0-40>
+}}
+
+Provide exactly 3 top_3_moves.
+
+SITE CONTEXT:
+{ctx}
+
+EXPERT OPINIONS (13 experts):
+{experts}
+"""
+
+
+REVENUE_LEAK_SYS = """You are the Revenue Leak Analyst. Given a scan and expert opinions,
+estimate the plausible monthly revenue leakage from the current site issues.
+Be honest: these are ESTIMATES with methodology assumptions. Never claim certainty.
+Output strictly valid JSON only."""
+
+
+REVENUE_LEAK_PROMPT = """Estimate monthly revenue leakage for this business. Reason about
+typical traffic + conversion assumptions for the detected industry, then apply the site's
+current issues. Output JSON:
+
+{{
+  "assumed_monthly_visitors": <int, e.g. 3000>,
+  "assumed_current_conversion_pct": <float, e.g. 1.2>,
+  "assumed_avg_order_value_usd": <float, e.g. 60>,
+  "current_monthly_revenue_usd": <int>,
+  "monthly_revenue_lost_usd": <int, from friction/trust/CTA issues>,
+  "lead_loss_pct": <float 0-100>,
+  "bounce_increase_pct": <float 0-100>,
+  "trust_loss_pct": <float 0-100>,
+  "confidence_score": <0-100>,
+  "potential_revenue_after_fix_usd": <int, monthly revenue if top 3 fixes ship>,
+  "monthly_lift_usd": <int>,
+  "breakdown": [
+    {{"issue":"<short>", "monthly_loss_usd": <int>, "why":"<1 sentence>"}}
+  ],
+  "methodology": "<2-3 sentence plain-English explanation of assumptions>"
+}}
+
+Provide 3-5 breakdown items. Assumed numbers should be plausible for the industry
+({industry}) and site scale hints in the context. Never output negative numbers.
+
+CONTEXT:
+{ctx}
+
+EXPERT SUMMARY:
+{expert_summary}
+"""
+
+
+@api.post("/scans/{scan_id}/growth-team")
+async def run_growth_team(scan_id: str, user=Depends(current_user)):
+    """Runs 13 parallel expert agents + CEO synthesis + revenue leak analysis."""
+    scan = await db.scans.find_one({"id": scan_id, "user_id": user["id"]}, {"_id": 0})
+    if not scan:
+        raise HTTPException(404, "Scan not found")
+    if scan.get("mode") != "business":
+        raise HTTPException(400, "AI Growth Team is only available for business scans")
+    if scan.get("status") != "complete":
+        raise HTTPException(400, "Scan must be complete before running the AI Growth Team")
+
+    ctx = _build_scan_context_for_agents(scan)
+
+    # Run all 13 specialist agents in parallel
+    log.info(f"Growth Team: running {len(GROWTH_TEAM_AGENTS)} agents in parallel for scan {scan_id}")
+    experts = await asyncio.gather(
+        *[_run_single_agent(a, ctx, scan_id) for a in GROWTH_TEAM_AGENTS]
+    )
+
+    # CEO synthesizes
+    expert_summary = json.dumps(
+        [{"agent": e["agent_name"], "opinion": e.get("opinion"), "impact": e.get("impact"),
+          "priority": e.get("priority"), "recommendation": e.get("recommendation"),
+          "gain_pct": e.get("estimated_revenue_gain_pct", 0)} for e in experts],
+        ensure_ascii=False,
+    )[:6000]
+
+    ceo_result = await llm_json(
+        CEO_SYS,
+        CEO_PROMPT.format(ctx=ctx[:2000], experts=expert_summary),
+        f"{scan_id}_ceo",
+    )
+
+    # Revenue Leak Engine
+    r = scan.get("result") or {}
+    industry = r.get("industry_detected") or scan.get("industry") or "other"
+    revenue_leak = await llm_json(
+        REVENUE_LEAK_SYS,
+        REVENUE_LEAK_PROMPT.format(
+            ctx=ctx[:2000],
+            expert_summary=expert_summary[:3000],
+            industry=industry,
+        ),
+        f"{scan_id}_revleak",
+    )
+
+    growth_team_doc = {
+        "experts": experts,
+        "executive_summary": ceo_result,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "agent_count": len(experts),
+    }
+
+    await db.scans.update_one(
+        {"id": scan_id},
+        {"$set": {"growth_team": growth_team_doc, "revenue_leak": revenue_leak}},
+    )
+
+    return {"growth_team": growth_team_doc, "revenue_leak": revenue_leak}
+
+
+@api.get("/scans/{scan_id}/growth-team")
+async def get_growth_team(scan_id: str, user=Depends(current_user)):
+    scan = await db.scans.find_one({"id": scan_id, "user_id": user["id"]}, {"_id": 0})
+    if not scan:
+        raise HTTPException(404, "Scan not found")
+    return {
+        "growth_team": scan.get("growth_team"),
+        "revenue_leak": scan.get("revenue_leak"),
+    }
+
+
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
