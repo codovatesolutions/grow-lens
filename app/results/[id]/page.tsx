@@ -581,6 +581,56 @@ export default function Results() {
           </div>
         </div>
 
+        {r.screenshots && (r.screenshots.desktop || r.screenshots.mobile) && (
+          <div className="grid md:grid-cols-12 gap-6" data-testid="scanned-visuals">
+            {r.screenshots.desktop && (
+              <div className="md:col-span-8 space-y-2">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5"/> Scanned Desktop View
+                </div>
+                <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative group flex flex-col">
+                  <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                    <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono max-w-sm mx-auto">
+                      {scan.target}
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-0 bg-muted/20">
+                    <img
+                      src={r.screenshots.desktop}
+                      alt="Desktop View"
+                      className="w-full h-full object-cover object-top"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            {r.screenshots.mobile && (
+              <div className="md:col-span-4 space-y-2 flex flex-col">
+                <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5"/> Scanned Mobile View
+                </div>
+                <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm flex-1 relative group max-w-[280px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
+                  <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
+                    12:00
+                  </div>
+                  <div className="flex-1 min-h-0 bg-muted/20">
+                    <img
+                      src={r.screenshots.mobile}
+                      alt="Mobile View"
+                      className="w-full h-full object-cover object-top"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {isBiz && Object.keys(subs).length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-6 gap-px bg-border border border-border" data-testid="subscores">
             {SUBSCORE_KEYS.map(([k, label]) => {

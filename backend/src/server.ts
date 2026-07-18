@@ -94,6 +94,11 @@ Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, 5 copywriting_r
 Each top_fix MUST include realistic, copy-pasteable code snippets. Keep snippets under 15 lines each.
 If no leads found, return an empty list for leads.
 
+SECURITY, PRIVACY & SEO INSTRUCTIONS:
+- You must carefully analyze the 'security' object in the WEBSITE DATA (which contains SSL, HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy status, privacy/terms links, and plain-text email count).
+- Under 'trust_gaps', explicitly focus on security and privacy gaps: list any missing security headers, missing SSL/HTTPS, lack of Privacy Policy/Terms links, and security vulnerabilities like plain-text email exposure.
+- Under 'top_fixes', prioritize Trust fixes that provide clear instructions and configuration code/tags to resolve these security and privacy vulnerabilities.
+
 INDUSTRY HINT (may be 'auto' or empty): {industry}
 
 WEBSITE DATA:
@@ -322,6 +327,24 @@ async function scrapeWebsite(targetUrl: string) {
     $('script, style, noscript').remove();
     const bodyTextClean = $('body').text().replace(/\s+/g, ' ').trim().substring(0, 4000);
     
+    const headers = response.headers || {};
+    const has_privacy_policy = internal_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy')) ||
+      buttons_or_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy'));
+    const has_terms = internal_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition')) ||
+      buttons_or_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition'));
+
+    const security = {
+      has_https: url.startsWith('https://'),
+      has_csp: !!(headers['content-security-policy'] || headers['csp']),
+      has_hsts: !!headers['strict-transport-security'],
+      has_xfo: !!headers['x-frame-options'],
+      has_xcto: !!headers['x-content-type-options'],
+      has_referrer_policy: !!headers['referrer-policy'],
+      has_privacy_policy,
+      has_terms,
+      exposed_emails_count: emails_found.length,
+    };
+
     return {
       url,
       title,
@@ -337,6 +360,7 @@ async function scrapeWebsite(targetUrl: string) {
       has_https: url.startsWith('https://'),
       has_viewport: $('meta[name="viewport"]').length > 0,
       body_text_sample: bodyTextClean,
+      security,
     };
   } catch (err: any) {
     throw new Error(`Could not fetch site: ${err.message}`);
@@ -489,6 +513,17 @@ api.post('/scans', currentUser as any, async (req: AuthenticatedRequest, res: Re
             .replace('{notes}', notes || 'n/a');
           
           result = await llmJson(CREATOR_SYS, prompt, sid);
+          
+          // Generate screenshots for creator profile page
+          let cleanTarget = target.trim();
+          if (!cleanTarget.startsWith('http://') && !cleanTarget.startsWith('https://')) {
+            cleanTarget = 'https://' + cleanTarget;
+          }
+          const enc = encodeURIComponent(cleanTarget);
+          result.screenshots = {
+            desktop: `https://s0.wp.com/mshots/v1/${enc}?w=1200&h=900`,
+            mobile: `https://s0.wp.com/mshots/v1/${enc}?w=400&h=800`,
+          };
         }
 
         await pool.query(
