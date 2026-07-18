@@ -1,19 +1,12 @@
 {
   "version": 2,
-  "buildCommand": "pnpm build",
-  "installCommand": "pnpm install",
   "framework": "nextjs",
-  "routes": [
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "http://localhost:5000/$1"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/api/:path*",
+      "destination": "https://lens-growth.onrender.com/api/:path*"
     }
   ]
 }
