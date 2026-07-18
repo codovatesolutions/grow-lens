@@ -62,7 +62,7 @@ export default function Signup() {
             <Label>Name</Label>
             <Input
               value={form.name}
-              onChange={(e) => set("name", e.target.value)}
+              onChange={(e: any) => set("name", e.target.value)}
               required
               data-testid="signup-name"
             />
@@ -72,7 +72,7 @@ export default function Signup() {
             <Input
               type="email"
               value={form.email}
-              onChange={(e) => set("email", e.target.value)}
+              onChange={(e: any) => set("email", e.target.value)}
               required
               data-testid="signup-email"
             />
@@ -82,7 +82,7 @@ export default function Signup() {
             <Input
               type="password"
               value={form.password}
-              onChange={(e) => set("password", e.target.value)}
+              onChange={(e: any) => set("password", e.target.value)}
               required
               minLength={6}
               data-testid="signup-password"
@@ -90,7 +90,7 @@ export default function Signup() {
           </div>
           <div className="space-y-2">
             <Label>I am a</Label>
-            <Select value={form.role} onValueChange={(v) => set("role", v)}>
+            <Select value={form.role} onValueChange={(v: string) => set("role", v)}>
               <SelectTrigger data-testid="signup-role">
                 <SelectValue />
               </SelectTrigger>
