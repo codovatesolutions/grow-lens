@@ -16,7 +16,7 @@ import {
   Globe, Sparkles, CheckCircle2, AlertCircle, RefreshCw, BarChart2,
   Lock, TrendingUp, HelpCircle, ArrowLeft, Terminal, FileCode, Users,
   Bot, Download, Share2, Calendar, AlertTriangle, Loader2, Wand2, Crown,
-  TrendingDown
+  TrendingDown, Smartphone
 } from "lucide-react";
 import Shell from "@/components/Shell";
 import ScoreRing from "@/components/ScoreRing";
@@ -645,6 +645,87 @@ export default function Results() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Audited Gaps (2x2 Grid) */}
+        {isBiz && (
+          <div className="grid md:grid-cols-2 gap-6 animate-fade-in" data-testid="audited-gaps">
+            {/* Trust & Security Gaps */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-red-500/5 to-transparent border-red-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-red-500 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-red-500"/> Trust & Security Gaps
+              </h3>
+              {(!r.trust_gaps || r.trust_gaps.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No critical trust or security issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.trust_gaps.map((gap: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                      <span>{gap}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* SEO & Visibility Issues */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-amber-500 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-amber-500"/> SEO & Visibility Issues
+              </h3>
+              {(!r.seo_issues || r.seo_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No critical SEO issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.seo_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* Mobile & Responsiveness */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-indigo-500/5 to-transparent border-indigo-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-indigo-500 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-indigo-500"/> Mobile & Responsive Issues
+              </h3>
+              {(!r.mobile_issues || r.mobile_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No responsiveness issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.mobile_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* Conversion & CTA Issues */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-emerald-500 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-500"/> Conversion & CTA Issues
+              </h3>
+              {(!r.cta_issues || r.cta_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No call-to-action issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.cta_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
           </div>
         )}
 
