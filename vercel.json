@@ -6,7 +6,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://lens-growth.onrender.com/api/:path*"
+      "destination": "https://lens-growth.onrender.com/:path*"
     }
   ]
 }
