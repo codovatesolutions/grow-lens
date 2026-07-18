@@ -81,12 +81,12 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
   const [activeTab, setActiveTab] = useState("fixes");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="grid grid-cols-5 w-full">
-        <TabsTrigger value="fixes" data-testid="tab-fixes">Top Fixes</TabsTrigger>
-        <TabsTrigger value="outreach" data-testid="tab-outreach">Outreach</TabsTrigger>
-        <TabsTrigger value="leads" data-testid="tab-leads">Leads</TabsTrigger>
-        <TabsTrigger value="board" data-testid="tab-board">Growth Board</TabsTrigger>
-        <TabsTrigger value="code" data-testid="tab-code">Code Fixes</TabsTrigger>
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-5 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+        <TabsTrigger value="fixes" className="flex-1 md:flex-initial" data-testid="tab-fixes">Top Fixes</TabsTrigger>
+        <TabsTrigger value="outreach" className="flex-1 md:flex-initial" data-testid="tab-outreach">Outreach</TabsTrigger>
+        <TabsTrigger value="leads" className="flex-1 md:flex-initial" data-testid="tab-leads">Leads</TabsTrigger>
+        <TabsTrigger value="board" className="flex-1 md:flex-initial" data-testid="tab-board">Growth Board</TabsTrigger>
+        <TabsTrigger value="code" className="flex-1 md:flex-initial" data-testid="tab-code">Code Fixes</TabsTrigger>
       </TabsList>
 
       <TabsContent value="fixes" className="space-y-4">
@@ -225,11 +225,11 @@ function CreatorResults({ result }: { result: any }) {
   const [activeTab, setActiveTab] = useState("ideas");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="grid grid-cols-4 w-full">
-        <TabsTrigger value="ideas" data-testid="tab-ideas">Post Ideas</TabsTrigger>
-        <TabsTrigger value="captions" data-testid="tab-captions">Captions</TabsTrigger>
-        <TabsTrigger value="hooks" data-testid="tab-hooks">Hooks</TabsTrigger>
-        <TabsTrigger value="pillars" data-testid="tab-pillars">Positioning</TabsTrigger>
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-4 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+        <TabsTrigger value="ideas" className="flex-1 md:flex-initial" data-testid="tab-ideas">Post Ideas</TabsTrigger>
+        <TabsTrigger value="captions" className="flex-1 md:flex-initial" data-testid="tab-captions">Captions</TabsTrigger>
+        <TabsTrigger value="hooks" className="flex-1 md:flex-initial" data-testid="tab-hooks">Hooks</TabsTrigger>
+        <TabsTrigger value="pillars" className="flex-1 md:flex-initial" data-testid="tab-pillars">Positioning</TabsTrigger>
       </TabsList>
 
       <TabsContent value="ideas" className="space-y-4">
@@ -582,52 +582,108 @@ export default function Results() {
         </div>
 
         {r.screenshots && (r.screenshots.desktop || r.screenshots.mobile) && (
-          <div className="grid md:grid-cols-12 gap-6" data-testid="scanned-visuals">
-            {r.screenshots.desktop && (
-              <div className="md:col-span-8 space-y-2">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5"/> Scanned Desktop View
-                </div>
-                <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative group flex flex-col">
-                  <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
-                    <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
-                    <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
-                    <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono max-w-sm mx-auto">
-                      {scan.target}
+          <div className="space-y-4" data-testid="scanned-visuals">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5"/> Scanned Visuals</span>
+            </div>
+            
+            {/* Desktop view side-by-side grid */}
+            <div className="hidden md:grid md:grid-cols-12 gap-6">
+              {r.screenshots.desktop && (
+                <div className="md:col-span-8 space-y-2">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Desktop view</div>
+                  <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative group flex flex-col">
+                    <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                      <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono max-w-sm mx-auto">
+                        {scan.target}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-0 bg-muted/20">
+                      <img
+                        src={r.screenshots.desktop}
+                        alt="Desktop View"
+                        className="w-full h-full object-cover object-top"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
                     </div>
                   </div>
-                  <div className="flex-1 min-h-0 bg-muted/20">
-                    <img
-                      src={r.screenshots.desktop}
-                      alt="Desktop View"
-                      className="w-full h-full object-cover object-top"
-                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                    />
+                </div>
+              )}
+              {r.screenshots.mobile && (
+                <div className="md:col-span-4 space-y-2 flex flex-col">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mobile view</div>
+                  <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm flex-1 relative group max-w-[280px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
+                    <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
+                      12:00
+                    </div>
+                    <div className="flex-1 min-h-0 bg-muted/20">
+                      <img
+                        src={r.screenshots.mobile}
+                        alt="Mobile View"
+                        className="w-full h-full object-cover object-top"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-            {r.screenshots.mobile && (
-              <div className="md:col-span-4 space-y-2 flex flex-col">
-                <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5"/> Scanned Mobile View
-                </div>
-                <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm flex-1 relative group max-w-[280px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
-                  <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
-                    12:00
-                  </div>
-                  <div className="flex-1 min-h-0 bg-muted/20">
-                    <img
-                      src={r.screenshots.mobile}
-                      alt="Mobile View"
-                      className="w-full h-full object-cover object-top"
-                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Mobile/Tablet tab switcher */}
+            <div className="block md:hidden">
+              <Tabs defaultValue="desktop" className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-3">
+                  <TabsTrigger value="desktop">Desktop Preview</TabsTrigger>
+                  <TabsTrigger value="mobile">Mobile Preview</TabsTrigger>
+                </TabsList>
+                <TabsContent value="desktop" className="mt-0">
+                  {r.screenshots.desktop ? (
+                    <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative flex flex-col">
+                      <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                        <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono">
+                          {scan.target}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-h-0 bg-muted/20">
+                        <img
+                          src={r.screenshots.desktop}
+                          alt="Desktop View"
+                          className="w-full h-full object-cover object-top"
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-xl">Desktop screenshot not available.</div>
+                  )}
+                </TabsContent>
+                <TabsContent value="mobile" className="mt-0">
+                  {r.screenshots.mobile ? (
+                    <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm relative max-w-[260px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
+                      <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
+                        12:00
+                      </div>
+                      <div className="flex-1 min-h-0 bg-muted/20">
+                        <img
+                          src={r.screenshots.mobile}
+                          alt="Mobile View"
+                          className="w-full h-full object-cover object-top"
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-xl">Mobile screenshot not available.</div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
           </div>
         )}
 
