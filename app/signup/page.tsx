@@ -158,7 +158,7 @@ export default function Signup() {
             </div>
             <div className="space-y-2">
               <Label>I am a</Label>
-              <Select value={form.role} onValueChange={(v) => set("role", v)}>
+              <Select value={form.role} onValueChange={(v: string) => set("role", v)}>
                 <SelectTrigger data-testid="signup-role">
                   <SelectValue />
                 </SelectTrigger>
