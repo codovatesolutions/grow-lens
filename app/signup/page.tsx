@@ -130,7 +130,7 @@ export default function Signup() {
               <Label>Name</Label>
               <Input
                 value={form.name}
-                onChange={(e) => set("name", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => set("name", e.target.value)}
                 required
                 data-testid="signup-name"
               />
@@ -140,7 +140,7 @@ export default function Signup() {
               <Input
                 type="email"
                 value={form.email}
-                onChange={(e) => set("email", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => set("email", e.target.value)}
                 required
                 data-testid="signup-email"
               />
@@ -150,7 +150,7 @@ export default function Signup() {
               <Input
                 type="password"
                 value={form.password}
-                onChange={(e) => set("password", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => set("password", e.target.value)}
                 required
                 minLength={6}
                 data-testid="signup-password"
