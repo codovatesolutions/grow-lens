@@ -29,7 +29,18 @@ app.use(cors({
 // ============ PROMPTS & SCHEMAS ============
 const BUSINESS_SYS = `You are GrowthLens AI, a senior conversion-rate optimization analyst.
 You analyze a public business website and output strictly valid JSON. Use plain English,
-specific to the site content provided. Never invent facts not present in the data.`;
+specific to the site content provided. Never invent facts not present in the data.
+
+SCORING CRITIQUE RULES:
+1. Be highly critical, objective, and realistic. Do NOT output generic, boilerplate, or safe scores like 85 or 90. Most websites have notable flaws and should score between 45 and 75. A score above 80 should be extremely rare and reserved for virtually perfect sites.
+2. Evaluate each subscore dynamically:
+   - Trust: Base this on SSL/HTTPS presence, contact info (emails/phones found), and clear value propositions.
+   - Conversion: Base this on presence and quality of buttons/CTAs, clear headlines, and distinct copy.
+   - UX: Base this on viewport existence, cleanliness of structure, and clear headers (h1/h2).
+   - Copywriting: Base this on clarity and persuasive power of the titles, h1, h2, and body sample text.
+   - Brand: Base this on consistency of the messaging, brand personality, and description.
+   - SEO: Base this on title tag length and descriptiveness, meta description existence, and h1/h2 count/quality.
+3. The overall "score" MUST be the exact mathematical average of the six subscores (rounded to the nearest integer) to maintain strict logical consistency.`;
 
 const BUSINESS_PROMPT = `Analyze this website data and respond with ONLY a JSON object in this exact schema:
 
@@ -86,6 +97,11 @@ Provide exactly 5 top_fixes, 3 outreach_emails, 3 sales_pitches, 5 copywriting_r
 Each top_fix MUST include realistic, copy-pasteable code snippets. Keep snippets under 15 lines each.
 If no leads found, return an empty list for leads.
 
+SECURITY, PRIVACY & SEO INSTRUCTIONS:
+- You must carefully analyze the 'security' object in the WEBSITE DATA (which contains SSL, HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy status, privacy/terms links, and plain-text email count).
+- Under 'trust_gaps', explicitly focus on security and privacy gaps: list any missing security headers, missing SSL/HTTPS, lack of Privacy Policy/Terms links, and security vulnerabilities like plain-text email exposure.
+- Under 'top_fixes', prioritize Trust fixes that provide clear instructions and configuration code/tags to resolve these security and privacy vulnerabilities.
+
 INDUSTRY HINT (may be 'auto' or empty): {industry}
 
 WEBSITE DATA:
@@ -94,7 +110,11 @@ WEBSITE DATA:
 const CREATOR_SYS = `You are GrowthLens AI, a creator-economy growth strategist.
 You analyze public social profile links and output strictly valid JSON. Use plain
 English and concrete examples. Do not claim private platform access; reason from the URLs
-and any provided notes.`;
+and any provided notes.
+
+SCORING CRITIQUE RULES:
+1. Be highly critical and objective. Avoid safe boilerplate scores (like 80 or 85). Profile scores should vary dynamically based on target link and notes, generally ranging between 40 and 75 for average profiles.
+2. Evaluate the overall "score" by critically assessing niche clarity, strength of branding, audience signals, and CTA positioning.`;
 
 const CREATOR_PROMPT = `Analyze these creator profile link(s) and respond with ONLY a JSON object:
 
@@ -139,7 +159,11 @@ Generate exactly {days} entries (one per day). Vary platforms and formats.
 CREATOR CONTEXT:
 {ctx}`;
 
-const COMPARE_SYS = `You are a competitive-analysis growth strategist. Compare two websites and output strictly valid JSON only.`;
+const COMPARE_SYS = `You are a competitive-analysis growth strategist. Compare two websites and output strictly valid JSON only.
+
+SCORING CRITIQUE RULES:
+1. Be highly critical, objective, and realistic. Do NOT output generic, boilerplate, or identical scores (like 85) for both sites. Most websites have notable flaws and should score between 45 and 75.
+2. Calculate the overall "overall" score for both 'mine' and 'competitor' as the exact mathematical average of their respective subscores.`;
 
 const COMPARE_PROMPT = `Compare these two websites and respond with ONLY a JSON object:
 
@@ -306,6 +330,24 @@ async function scrapeWebsite(targetUrl: string) {
     $('script, style, noscript').remove();
     const bodyTextClean = $('body').text().replace(/\s+/g, ' ').trim().substring(0, 4000);
     
+    const headers = response.headers || {};
+    const has_privacy_policy = internal_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy')) ||
+      buttons_or_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy'));
+    const has_terms = internal_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition')) ||
+      buttons_or_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition'));
+
+    const security = {
+      has_https: url.startsWith('https://'),
+      has_csp: !!(headers['content-security-policy'] || headers['csp']),
+      has_hsts: !!headers['strict-transport-security'],
+      has_xfo: !!headers['x-frame-options'],
+      has_xcto: !!headers['x-content-type-options'],
+      has_referrer_policy: !!headers['referrer-policy'],
+      has_privacy_policy,
+      has_terms,
+      exposed_emails_count: emails_found.length,
+    };
+
     return {
       url,
       title,
@@ -321,6 +363,7 @@ async function scrapeWebsite(targetUrl: string) {
       has_https: url.startsWith('https://'),
       has_viewport: $('meta[name="viewport"]').length > 0,
       body_text_sample: bodyTextClean,
+      security,
     };
   } catch (err: any) {
     throw new Error(`Could not fetch site: ${err.message}`);
@@ -546,6 +589,17 @@ api.post('/scans', currentUser as any, async (req: AuthenticatedRequest, res: Re
             .replace('{notes}', notes || 'n/a');
           
           result = await llmJson(CREATOR_SYS, prompt, sid);
+          
+          // Generate screenshots for creator profile page
+          let cleanTarget = target.trim();
+          if (!cleanTarget.startsWith('http://') && !cleanTarget.startsWith('https://')) {
+            cleanTarget = 'https://' + cleanTarget;
+          }
+          const enc = encodeURIComponent(cleanTarget);
+          result.screenshots = {
+            desktop: `https://s0.wp.com/mshots/v1/${enc}?w=1200&h=900`,
+            mobile: `https://s0.wp.com/mshots/v1/${enc}?w=400&h=800`,
+          };
         }
 
         await pool.query(

@@ -16,7 +16,7 @@ import {
   Globe, Sparkles, CheckCircle2, AlertCircle, RefreshCw, BarChart2,
   Lock, TrendingUp, HelpCircle, ArrowLeft, Terminal, FileCode, Users,
   Bot, Download, Share2, Calendar, AlertTriangle, Loader2, Wand2, Crown,
-  TrendingDown
+  TrendingDown, Smartphone
 } from "lucide-react";
 import Shell from "@/components/Shell";
 import ScoreRing from "@/components/ScoreRing";
@@ -81,12 +81,12 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
   const [activeTab, setActiveTab] = useState("fixes");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="grid grid-cols-5 w-full">
-        <TabsTrigger value="fixes" data-testid="tab-fixes">Top Fixes</TabsTrigger>
-        <TabsTrigger value="outreach" data-testid="tab-outreach">Outreach</TabsTrigger>
-        <TabsTrigger value="leads" data-testid="tab-leads">Leads</TabsTrigger>
-        <TabsTrigger value="board" data-testid="tab-board">Growth Board</TabsTrigger>
-        <TabsTrigger value="code" data-testid="tab-code">Code Fixes</TabsTrigger>
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-5 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+        <TabsTrigger value="fixes" className="flex-1 md:flex-initial" data-testid="tab-fixes">Top Fixes</TabsTrigger>
+        <TabsTrigger value="outreach" className="flex-1 md:flex-initial" data-testid="tab-outreach">Outreach</TabsTrigger>
+        <TabsTrigger value="leads" className="flex-1 md:flex-initial" data-testid="tab-leads">Leads</TabsTrigger>
+        <TabsTrigger value="board" className="flex-1 md:flex-initial" data-testid="tab-board">Growth Board</TabsTrigger>
+        <TabsTrigger value="code" className="flex-1 md:flex-initial" data-testid="tab-code">Code Fixes</TabsTrigger>
       </TabsList>
 
       <TabsContent value="fixes" className="space-y-4">
@@ -225,11 +225,11 @@ function CreatorResults({ result }: { result: any }) {
   const [activeTab, setActiveTab] = useState("ideas");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="grid grid-cols-4 w-full">
-        <TabsTrigger value="ideas" data-testid="tab-ideas">Post Ideas</TabsTrigger>
-        <TabsTrigger value="captions" data-testid="tab-captions">Captions</TabsTrigger>
-        <TabsTrigger value="hooks" data-testid="tab-hooks">Hooks</TabsTrigger>
-        <TabsTrigger value="pillars" data-testid="tab-pillars">Positioning</TabsTrigger>
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-4 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+        <TabsTrigger value="ideas" className="flex-1 md:flex-initial" data-testid="tab-ideas">Post Ideas</TabsTrigger>
+        <TabsTrigger value="captions" className="flex-1 md:flex-initial" data-testid="tab-captions">Captions</TabsTrigger>
+        <TabsTrigger value="hooks" className="flex-1 md:flex-initial" data-testid="tab-hooks">Hooks</TabsTrigger>
+        <TabsTrigger value="pillars" className="flex-1 md:flex-initial" data-testid="tab-pillars">Positioning</TabsTrigger>
       </TabsList>
 
       <TabsContent value="ideas" className="space-y-4">
@@ -581,6 +581,112 @@ export default function Results() {
           </div>
         </div>
 
+        {r.screenshots && (r.screenshots.desktop || r.screenshots.mobile) && (
+          <div className="space-y-4" data-testid="scanned-visuals">
+            <div className="text-xs uppercase tracking-widest text-muted-foreground font-bold flex items-center justify-between">
+              <span className="flex items-center gap-1.5"><Globe className="w-3.5 h-3.5"/> Scanned Visuals</span>
+            </div>
+            
+            {/* Desktop view side-by-side grid */}
+            <div className="hidden md:grid md:grid-cols-12 gap-6">
+              {r.screenshots.desktop && (
+                <div className="md:col-span-8 space-y-2">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Desktop view</div>
+                  <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative group flex flex-col">
+                    <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                      <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono max-w-sm mx-auto">
+                        {scan.target}
+                      </div>
+                    </div>
+                    <div className="flex-1 min-h-0 bg-muted/20">
+                      <img
+                        src={r.screenshots.desktop}
+                        alt="Desktop View"
+                        className="w-full h-full object-cover object-top"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+              {r.screenshots.mobile && (
+                <div className="md:col-span-4 space-y-2 flex flex-col">
+                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Mobile view</div>
+                  <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm flex-1 relative group max-w-[280px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
+                    <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
+                      12:00
+                    </div>
+                    <div className="flex-1 min-h-0 bg-muted/20">
+                      <img
+                        src={r.screenshots.mobile}
+                        alt="Mobile View"
+                        className="w-full h-full object-cover object-top"
+                        onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile/Tablet tab switcher */}
+            <div className="block md:hidden">
+              <Tabs defaultValue="desktop" className="w-full">
+                <TabsList className="grid grid-cols-2 w-full mb-3">
+                  <TabsTrigger value="desktop">Desktop Preview</TabsTrigger>
+                  <TabsTrigger value="mobile">Mobile Preview</TabsTrigger>
+                </TabsList>
+                <TabsContent value="desktop" className="mt-0">
+                  {r.screenshots.desktop ? (
+                    <div className="border border-border rounded-xl bg-card overflow-hidden shadow-sm aspect-[16/10] relative flex flex-col">
+                      <div className="bg-muted px-4 py-2 border-b border-border flex items-center gap-1.5 shrink-0">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                        <div className="flex-1 bg-background text-[10px] text-muted-foreground px-2 py-0.5 rounded border border-border/40 truncate text-center font-mono">
+                          {scan.target}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-h-0 bg-muted/20">
+                        <img
+                          src={r.screenshots.desktop}
+                          alt="Desktop View"
+                          className="w-full h-full object-cover object-top"
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-xl">Desktop screenshot not available.</div>
+                  )}
+                </TabsContent>
+                <TabsContent value="mobile" className="mt-0">
+                  {r.screenshots.mobile ? (
+                    <div className="border border-border rounded-[2.5rem] bg-card overflow-hidden shadow-sm relative max-w-[260px] mx-auto border-8 border-muted flex flex-col aspect-[9/18]">
+                      <div className="bg-muted h-6 flex items-center justify-center border-b border-border font-mono text-[9px] text-muted-foreground shrink-0 select-none">
+                        12:00
+                      </div>
+                      <div className="flex-1 min-h-0 bg-muted/20">
+                        <img
+                          src={r.screenshots.mobile}
+                          alt="Mobile View"
+                          className="w-full h-full object-cover object-top"
+                          onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-xs text-muted-foreground border border-dashed rounded-xl">Mobile screenshot not available.</div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        )}
+
         {isBiz && Object.keys(subs).length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-6 gap-px bg-border border border-border" data-testid="subscores">
             {SUBSCORE_KEYS.map(([k, label]) => {
@@ -595,6 +701,87 @@ export default function Results() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Audited Gaps (2x2 Grid) */}
+        {isBiz && (
+          <div className="grid md:grid-cols-2 gap-6 animate-fade-in" data-testid="audited-gaps">
+            {/* Trust & Security Gaps */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-red-500/5 to-transparent border-red-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-red-500 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-red-500"/> Trust & Security Gaps
+              </h3>
+              {(!r.trust_gaps || r.trust_gaps.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No critical trust or security issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.trust_gaps.map((gap: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 mt-1.5 shrink-0" />
+                      <span>{gap}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* SEO & Visibility Issues */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-amber-500/5 to-transparent border-amber-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-amber-500 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-amber-500"/> SEO & Visibility Issues
+              </h3>
+              {(!r.seo_issues || r.seo_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No critical SEO issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.seo_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* Mobile & Responsiveness */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-indigo-500/5 to-transparent border-indigo-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-indigo-500 flex items-center gap-2">
+                <Smartphone className="w-4 h-4 text-indigo-500"/> Mobile & Responsive Issues
+              </h3>
+              {(!r.mobile_issues || r.mobile_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No responsiveness issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.mobile_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* Conversion & CTA Issues */}
+            <Card className="p-5 space-y-3 bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20">
+              <h3 className="font-display text-xs font-bold tracking-widest uppercase text-emerald-500 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-500"/> Conversion & CTA Issues
+              </h3>
+              {(!r.cta_issues || r.cta_issues.length === 0) ? (
+                <p className="text-xs text-muted-foreground">No call-to-action issues detected.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {r.cta_issues.map((issue: string, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground flex gap-2 items-start leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
           </div>
         )}
 

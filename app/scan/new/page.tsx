@@ -103,7 +103,7 @@ export default function NewScanPage() {
                       : "https://instagram.com/yourprofile or @yourhandle"
                   }
                   value={target}
-                  onChange={(e) => setTarget(e.target.value)}
+                  onChange={(e: any) => setTarget(e.target.value)}
                   disabled={loading}
                   required
                   className="bg-background border-border"
@@ -150,7 +150,7 @@ export default function NewScanPage() {
                 <Textarea
                   placeholder="e.g. We want to improve our CTA click-through rate, our target audience is B2B sales leads, or we recently updated our styling."
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e: any) => setNotes(e.target.value)}
                   disabled={loading}
                   rows={3}
                   className="bg-background border-border resize-none"
