@@ -8,7 +8,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://localhost:5000/:path*', // Proxy to Express backend stripping /api prefix
+        destination: `${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/:path*`, // Proxy to Express backend stripping /api prefix
       },
     ];
   },

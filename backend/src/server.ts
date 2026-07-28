@@ -7,6 +7,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import dotenv from 'dotenv';
 import path from 'path';
+import { OAuth2Client } from 'google-auth-library';
 
 import { pool, initDb } from './db';
 import { llmJson, llmText } from './llm';
@@ -15,6 +16,8 @@ dotenv.config({ path: path.join(__dirname, '../.env') });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
 const PORT = process.env.PORT || 5000;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const app = express();
 app.use(express.json());
@@ -418,6 +421,79 @@ api.post('/auth/login', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({ detail: err.message });
+  }
+});
+
+// Google OAuth
+api.post('/auth/google', async (req: Request, res: Response) => {
+  const { id_token } = req.body;
+  if (!id_token) {
+    return res.status(400).json({ detail: 'id_token is required' });
+  }
+  if (!GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ detail: 'Google OAuth is not configured on the server' });
+  }
+
+  try {
+    // Verify the token with Google
+    const ticket = await googleClient.verifyIdToken({
+      idToken: id_token,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      return res.status(401).json({ detail: 'Invalid Google token' });
+    }
+
+    const { email, name, sub: googleId } = payload;
+    const now = new Date();
+
+    // Upsert user — create if new, return existing if already registered
+    const existing = await pool.query(
+      'SELECT id, email, name, role, created_at FROM users WHERE email = $1',
+      [email.toLowerCase()]
+    );
+
+    let userId: string;
+    let userRole: string;
+    let userName: string;
+    let createdAt: Date;
+
+    if (existing.rows.length > 0) {
+      // Existing user — log them in
+      const u = existing.rows[0];
+      userId = u.id;
+      userRole = u.role;
+      userName = u.name || name || email;
+      createdAt = u.created_at;
+    } else {
+      // New user — create account (password_hash NULL for OAuth users)
+      userId = uuidv4();
+      userRole = 'business';
+      userName = name || email;
+      createdAt = now;
+      await pool.query(
+        `INSERT INTO users (id, email, name, role, password_hash, created_at)
+         VALUES ($1, $2, $3, $4, NULL, $5)
+         ON CONFLICT (email) DO NOTHING`,
+        [userId, email.toLowerCase(), userName, userRole, createdAt]
+      );
+    }
+
+    const token = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
+    return res.json({
+      token,
+      user: {
+        id: userId,
+        email: email.toLowerCase(),
+        name: userName,
+        role: userRole,
+        created_at: createdAt instanceof Date ? createdAt.toISOString() : createdAt,
+      },
+    });
+  } catch (err: any) {
+    console.error('Google auth error:', err);
+    return res.status(401).json({ detail: 'Google authentication failed' });
   }
 });
 
