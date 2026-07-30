@@ -81,8 +81,9 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
   const [activeTab, setActiveTab] = useState("fixes");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-5 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-6 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
         <TabsTrigger value="fixes" className="flex-1 md:flex-initial" data-testid="tab-fixes">Top Fixes</TabsTrigger>
+        <TabsTrigger value="security" className="flex-1 md:flex-initial" data-testid="tab-security">Security & Risks</TabsTrigger>
         <TabsTrigger value="outreach" className="flex-1 md:flex-initial" data-testid="tab-outreach">Outreach</TabsTrigger>
         <TabsTrigger value="leads" className="flex-1 md:flex-initial" data-testid="tab-leads">Leads</TabsTrigger>
         <TabsTrigger value="board" className="flex-1 md:flex-initial" data-testid="tab-board">Growth Board</TabsTrigger>
@@ -105,6 +106,107 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
             </div>
           </Card>
         ))}
+      </TabsContent>
+
+      <TabsContent value="security" className="space-y-4">
+        <Card className="p-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-display text-base font-bold flex items-center gap-2">
+                <Lock className="w-4 h-4 text-primary" /> Security & Vulnerabilities Audit
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Automated technical security, SSL header, and privacy compliance assessment.</p>
+            </div>
+            <Badge variant="outline" className="font-mono text-xs">
+              {(result.security_vulnerabilities || []).length} Issue(s) Detected
+            </Badge>
+          </div>
+
+          {/* Security Headers & Links Audit Grid */}
+          {result.scraped?.security && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">HTTPS / SSL</span>
+                <span className={`font-semibold ${result.scraped.security.has_https ? "text-emerald-500" : "text-red-500"}`}>
+                  {result.scraped.security.has_https ? "✓ Active (Secure)" : "✗ Missing (Unencrypted)"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">HSTS Header</span>
+                <span className={`font-semibold ${result.scraped.security.has_hsts ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_hsts ? "✓ Configured" : "⚠ Missing"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">Content Security Policy</span>
+                <span className={`font-semibold ${result.scraped.security.has_csp ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_csp ? "✓ Enabled" : "⚠ Missing CSP"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">Clickjacking Protection</span>
+                <span className={`font-semibold ${result.scraped.security.has_xfo ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_xfo ? "✓ X-Frame-Options" : "⚠ Missing XFO"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">Privacy Policy</span>
+                <span className={`font-semibold ${result.scraped.security.has_privacy_policy ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_privacy_policy ? "✓ Policy Found" : "⚠ Missing Policy Link"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">Terms of Service</span>
+                <span className={`font-semibold ${result.scraped.security.has_terms ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_terms ? "✓ Terms Found" : "⚠ Missing Terms Link"}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">Exposed Email Addresses</span>
+                <span className={`font-semibold ${result.scraped.security.exposed_emails_count === 0 ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.exposed_emails_count === 0 ? "✓ 0 Plaintext Emails" : `⚠ ${result.scraped.security.exposed_emails_count} Exposed`}
+                </span>
+              </div>
+              <div className="p-3 bg-muted/40 rounded border border-border text-xs">
+                <span className="text-muted-foreground block mb-1">MIME-Sniffing (XCTO)</span>
+                <span className={`font-semibold ${result.scraped.security.has_xcto ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.scraped.security.has_xcto ? "✓ Nosniff Enabled" : "⚠ Missing Nosniff"}
+                </span>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {(!result.security_vulnerabilities || result.security_vulnerabilities.length === 0) ? (
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            No critical security vulnerabilities or header deficiencies detected on this website.
+          </Card>
+        ) : (
+          result.security_vulnerabilities.map((v: any, i: number) => {
+            const isCrit = v.severity === "critical";
+            const isWarn = v.severity === "warning";
+            const borderCls = isCrit ? "border-red-500/40 bg-red-500/5" : isWarn ? "border-amber-500/30 bg-amber-500/5" : "border-blue-500/30 bg-blue-500/5";
+            const badgeCls = isCrit ? "bg-red-500 text-white" : isWarn ? "bg-amber-500 text-white" : "bg-blue-500 text-white";
+            return (
+              <Card key={i} className={`p-5 space-y-3 border ${borderCls}`} data-testid={`vuln-${i}`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className={`w-4 h-4 ${isCrit ? "text-red-500" : isWarn ? "text-amber-500" : "text-blue-500"}`} />
+                    <h4 className="font-display font-bold text-base">{v.title}</h4>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${badgeCls}`}>
+                    {v.severity}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">{v.impact}</p>
+                <div className="text-xs bg-muted/60 p-3 rounded border border-border/60">
+                  <span className="font-semibold block text-foreground mb-1">Recommended Solution:</span>
+                  <span className="text-muted-foreground font-mono leading-relaxed">{v.solution}</span>
+                </div>
+              </Card>
+            );
+          })
+        )}
       </TabsContent>
 
       <TabsContent value="outreach" className="space-y-4">

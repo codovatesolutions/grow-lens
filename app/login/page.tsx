@@ -46,25 +46,34 @@ export default function Login() {
           }
         },
       });
+      const measuredWidth = googleBtnRef.current.offsetWidth || 384;
+      const validWidth = Math.min(Math.max(measuredWidth, 200), 400);
+
       window.google.accounts.id.renderButton(googleBtnRef.current, {
         type: "standard",
         theme: "outline",
         size: "large",
         text: "continue_with",
         shape: "rectangular",
-        width: googleBtnRef.current.offsetWidth || 384,
+        width: validWidth,
       });
     };
 
     if (window.google) {
       initGoogle();
     } else {
-      const script = document.createElement("script");
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = initGoogle;
-      document.head.appendChild(script);
+      let script = document.querySelector('script[src="https://accounts.google.com/gsi/client"]') as HTMLScriptElement;
+      if (!script) {
+        script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      }
+      script.addEventListener("load", initGoogle);
+      return () => {
+        script?.removeEventListener("load", initGoogle);
+      };
     }
   }, [loginWithGoogle, router]);
 

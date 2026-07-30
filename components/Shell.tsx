@@ -7,9 +7,9 @@ import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Plus, Users, Sparkles, CalendarDays, FileText,
-  Settings, CreditCard, LogOut, Sun, Moon, Telescope
+  Settings, CreditCard, LogOut, Sun, Moon, Telescope, Menu, X
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tid: "nav-dashboard" },
@@ -27,9 +27,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const { theme, toggle } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen flex bg-background text-foreground">
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
         <div className="px-6 py-5 border-b border-border">
           <div className="flex items-center gap-2">
@@ -78,9 +80,79 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <aside className="relative z-50 w-72 max-w-[80vw] flex flex-col border-r border-border bg-card shadow-2xl h-full">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Telescope className="w-5 h-5 text-primary" />
+                  <span className="font-display text-lg font-bold tracking-tight">GrowthLens<span className="text-primary">.</span></span>
+                </div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-0.5 pl-7">by Codovate Solutions</div>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} data-testid="mobile-menu-close">
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+            <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+              {items.map((it) => {
+                const isActive = pathname === it.href;
+                return (
+                  <Link
+                    key={it.href}
+                    href={it.href}
+                    data-testid={`mobile-${it.tid}`}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors ${
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <it.icon className="w-4 h-4" />
+                    {it.label}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="p-4 border-t border-border">
+              <div className="text-xs text-muted-foreground mb-1">Signed in as</div>
+              <div className="text-sm font-medium truncate">{user?.name || user?.email}</div>
+              <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full mt-3 justify-start"
+                onClick={() => { setMobileOpen(false); logout(); router.push("/"); }}
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Logout
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-14 border-b border-border flex items-center justify-between px-4 md:px-8 bg-card">
-          <div className="md:hidden font-display text-lg font-bold">GrowthLens<span className="text-primary">.</span></div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileOpen(true)}
+              data-testid="mobile-menu-toggle"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <div className="font-display text-lg font-bold flex items-center gap-1.5 md:hidden">
+              <Telescope className="w-4 h-4 text-primary" />
+              <span>GrowthLens<span className="text-primary">.</span></span>
+            </div>
+          </div>
           <div className="flex-1" />
           <Button variant="ghost" size="icon" onClick={toggle} data-testid="theme-toggle">
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

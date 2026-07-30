@@ -90,6 +90,15 @@ const BUSINESS_PROMPT = `Analyze this website data and respond with ONLY a JSON 
   "screenshot_annotations": [
     {"label":"<short label, 2-4 words>","color":"red|yellow|green","x_pct":<0-100 approximate horizontal position on desktop screenshot>,"y_pct":<0-100 approximate vertical position>,"note":"<one-sentence explanation>"}
   ],
+  "security_vulnerabilities": [
+    {
+      "title": "<vulnerability title>",
+      "severity": "critical|warning|info",
+      "impact": "<why this vulnerability hurts security or trust>",
+      "solution": "<exact fix or header configuration>",
+      "category": "headers|ssl|privacy|email_exposure|meta"
+    }
+  ],
   "checklist": ["<5-7 next-step action items in plain language>"]
 }
 
@@ -99,7 +108,8 @@ If no leads found, return an empty list for leads.
 
 SECURITY, PRIVACY & SEO INSTRUCTIONS:
 - You must carefully analyze the 'security' object in the WEBSITE DATA (which contains SSL, HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy status, privacy/terms links, and plain-text email count).
-- Under 'trust_gaps', explicitly focus on security and privacy gaps: list any missing security headers, missing SSL/HTTPS, lack of Privacy Policy/Terms links, and security vulnerabilities like plain-text email exposure.
+- Under 'security_vulnerabilities', explicitly document all missing security headers, unencrypted connections, privacy link absences, and email exposure risks found in the site data.
+- Under 'trust_gaps', explicitly focus on security and privacy gaps.
 - Under 'top_fixes', prioritize Trust fixes that provide clear instructions and configuration code/tags to resolve these security and privacy vulnerabilities.
 
 INDUSTRY HINT (may be 'auto' or empty): {industry}
@@ -370,6 +380,86 @@ async function scrapeWebsite(targetUrl: string) {
   }
 }
 
+function generateSecurityVulnerabilities(sec: any) {
+  if (!sec) return [];
+  const vulnerabilities: Array<{ title: string; severity: 'critical' | 'warning' | 'info'; impact: string; solution: string; category: string }> = [];
+  
+  if (!sec.has_https) {
+    vulnerabilities.push({
+      title: 'Insecure Connection (HTTP without SSL)',
+      severity: 'critical',
+      impact: 'Traffic is unencrypted, exposing user data to interception and triggering severe browser security warnings.',
+      solution: 'Enforce HTTPS redirect and install a valid SSL/TLS certificate (e.g. Let\'s Encrypt or Cloudflare).',
+      category: 'ssl'
+    });
+  }
+  if (!sec.has_hsts) {
+    vulnerabilities.push({
+      title: 'Missing HTTP Strict Transport Security (HSTS)',
+      severity: 'warning',
+      impact: 'Allows potential downgrade attacks (HTTP instead of HTTPS) and cookie hijacking.',
+      solution: 'Add header: Strict-Transport-Security: max-age=31536000; includeSubDomains; preload',
+      category: 'headers'
+    });
+  }
+  if (!sec.has_csp) {
+    vulnerabilities.push({
+      title: 'Missing Content Security Policy (CSP)',
+      severity: 'warning',
+      impact: 'Leaves site vulnerable to Cross-Site Scripting (XSS) and data injection attacks.',
+      solution: 'Configure a strict Content-Security-Policy header specifying allowed script sources.',
+      category: 'headers'
+    });
+  }
+  if (!sec.has_xfo) {
+    vulnerabilities.push({
+      title: 'Missing X-Frame-Options Header',
+      severity: 'warning',
+      impact: 'Renders the site vulnerable to Clickjacking attacks in iFrames.',
+      solution: 'Add header: X-Frame-Options: SAMEORIGIN or DENY',
+      category: 'headers'
+    });
+  }
+  if (!sec.has_xcto) {
+    vulnerabilities.push({
+      title: 'Missing X-Content-Type-Options Header',
+      severity: 'info',
+      impact: 'Allows MIME-sniffing, where browsers misinterpret file types and execute malicious scripts.',
+      solution: 'Add header: X-Content-Type-Options: nosniff',
+      category: 'headers'
+    });
+  }
+  if (sec.exposed_emails_count > 0) {
+    vulnerabilities.push({
+      title: `Exposed Plaintext Emails (${sec.exposed_emails_count} found)`,
+      severity: 'warning',
+      impact: 'Raw email addresses in site HTML will be harvested by automated spam bots.',
+      solution: 'Use contact forms or obfuscate email addresses with Javascript/HTML entities.',
+      category: 'email_exposure'
+    });
+  }
+  if (!sec.has_privacy_policy) {
+    vulnerabilities.push({
+      title: 'Missing Privacy Policy Link',
+      severity: 'warning',
+      impact: 'Violates GDPR/CCPA regulations and undermines user data collection trust.',
+      solution: 'Add a clear Privacy Policy link in the footer.',
+      category: 'privacy'
+    });
+  }
+  if (!sec.has_terms) {
+    vulnerabilities.push({
+      title: 'Missing Terms & Conditions',
+      severity: 'info',
+      impact: 'Lacks explicit legal agreement for service usage and liability boundaries.',
+      solution: 'Add a Terms of Service link in the page footer.',
+      category: 'privacy'
+    });
+  }
+
+  return vulnerabilities;
+}
+
 // ============ AUTH MIDDLEWARE ============
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -497,31 +587,30 @@ api.post('/auth/google', async (req: Request, res: Response) => {
       [email.toLowerCase()]
     );
 
-    let userId: string;
-    let userRole: string;
-    let userName: string;
-    let createdAt: Date;
+    let u: any;
 
     if (existing.rows.length > 0) {
       // Existing user — log them in
-      const u = existing.rows[0];
-      userId = u.id;
-      userRole = u.role;
-      userName = u.name || name || email;
-      createdAt = u.created_at;
+      u = existing.rows[0];
     } else {
       // New user — create account (password_hash NULL for OAuth users)
-      userId = uuidv4();
-      userRole = 'business';
-      userName = name || email;
-      createdAt = now;
-      await pool.query(
+      const newUserId = uuidv4();
+      const userRole = 'business';
+      const userName = name || email;
+      const result = await pool.query(
         `INSERT INTO users (id, email, name, role, password_hash, created_at)
          VALUES ($1, $2, $3, $4, NULL, $5)
-         ON CONFLICT (email) DO NOTHING`,
-        [userId, email.toLowerCase(), userName, userRole, createdAt]
+         ON CONFLICT (email) DO UPDATE SET name = COALESCE(users.name, EXCLUDED.name)
+         RETURNING id, email, name, role, created_at`,
+        [newUserId, email.toLowerCase(), userName, userRole, now]
       );
+      u = result.rows[0];
     }
+
+    const userId = u.id;
+    const userRole = u.role;
+    const userName = u.name || name || email;
+    const createdAt = u.created_at;
 
     const token = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
@@ -568,8 +657,20 @@ api.post('/scans', currentUser as any, async (req: AuthenticatedRequest, res: Re
             .replace('{industry}', industry || 'auto');
           
           result = await llmJson(BUSINESS_SYS, prompt, sid);
+          const computedSecVulns = generateSecurityVulnerabilities(scraped.security);
+          if (!Array.isArray(result.security_vulnerabilities) || result.security_vulnerabilities.length === 0) {
+            result.security_vulnerabilities = computedSecVulns;
+          } else {
+            // Merge deterministic security audit vulnerabilities if missing
+            const existingTitles = new Set(result.security_vulnerabilities.map((v: any) => v.title));
+            for (const v of computedSecVulns) {
+              if (!existingTitles.has(v.title)) {
+                result.security_vulnerabilities.push(v);
+              }
+            }
+          }
+
           const enc = encodeURIComponent(scraped.url);
-          
           result.screenshots = {
             desktop: `https://s0.wp.com/mshots/v1/${enc}?w=1200&h=900`,
             mobile: `https://s0.wp.com/mshots/v1/${enc}?w=400&h=800`,
@@ -582,6 +683,7 @@ api.post('/scans', currentUser as any, async (req: AuthenticatedRequest, res: Re
             phones_found: scraped.phones_found,
             has_https: scraped.has_https,
             has_viewport: scraped.has_viewport,
+            security: scraped.security,
           };
         } else {
           const prompt = CREATOR_PROMPT
