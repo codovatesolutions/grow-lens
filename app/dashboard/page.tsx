@@ -281,12 +281,12 @@ export default function Dashboard() {
         {/* Widget grid */}
         <div className="grid grid-cols-12 gap-4">
           {/* Row 1: Revenue Score + Growth Score + AI Assistant (spans 2 rows) */}
-          <Widget title="Revenue Score" icon={DollarSign} tid="widget-revenue-score" className="col-span-6 lg:col-span-4">
-            <div className="flex items-center gap-5">
+          <Widget title="Revenue Score" icon={DollarSign} tid="widget-revenue-score" className="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <ScoreGauge value={revenue_score} />
-              <div className="flex-1">
+              <div className="flex-1 text-center sm:text-left">
                 <div className="text-xs text-muted-foreground">Economic-impact index derived from your business scans.</div>
-                <div className="mt-2 flex items-center gap-2 text-xs">
+                <div className="mt-2 flex items-center justify-center sm:justify-start gap-2 text-xs">
                   <span className="text-muted-foreground">vs last week</span>
                   <Delta value={weekly?.delta} />
                 </div>
@@ -294,10 +294,10 @@ export default function Dashboard() {
             </div>
           </Widget>
 
-          <Widget title="Growth Score" icon={TrendingUp} tid="widget-growth-score" className="col-span-6 lg:col-span-4">
-            <div className="flex items-center gap-5">
+          <Widget title="Growth Score" icon={TrendingUp} tid="widget-growth-score" className="col-span-12 sm:col-span-6 lg:col-span-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <ScoreGauge value={growth_score} />
-              <div className="flex-1">
+              <div className="flex-1 text-center sm:text-left">
                 <div className="text-xs text-muted-foreground">Average score across all your completed scans.</div>
                 <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
                   <div>

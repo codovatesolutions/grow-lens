@@ -158,7 +158,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
         </header>
-        <div className="flex-1 p-4 md:p-8 overflow-y-auto">{children}</div>
+        <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden max-w-full">{children}</div>
       </main>
     </div>
   );
