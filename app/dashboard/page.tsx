@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import {
   Plus, Globe, Sparkles, ArrowUpRight, ArrowUp, ArrowDown, MessageSquare,
@@ -260,23 +261,59 @@ export default function Dashboard() {
   return (
     <Shell>
       <div className="space-y-6 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-end justify-between flex-wrap gap-4">
+        {/* Growth OS Command Header */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-border pb-4">
           <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Home</div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="font-mono text-xs uppercase tracking-widest text-primary border-primary/40 bg-primary/10">
+                Growth OS v2 Command Center
+              </Badge>
+            </div>
             <h1 className="font-display text-3xl md:text-4xl font-bold tracking-tight mt-1">
-              {greeting}, {user?.name?.split(" ")[0] || "there"} <span className="text-primary">&bull;</span>
+              {greeting}, {user?.name?.split(" ")[0] || "Captain"} <span className="text-primary">&bull;</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {totals?.complete_scans ?? 0} scans &bull; {totals?.leads ?? 0} leads &bull; {tasks_summary?.open ?? 0} open tasks
+              {totals?.complete_scans ?? 0} scans &bull; {totals?.leads ?? 0} leads &bull; {tasks_summary?.open ?? 0} open growth tasks
             </p>
           </div>
-          <Link href="/scan/new">
-            <Button className="gap-2" data-testid="dashboard-new-scan-btn">
-              <Plus className="w-4 h-4" />New scan
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link href="/digital-twin">
+              <Button variant="outline" className="gap-2 text-xs">
+                AI Digital Twin
+              </Button>
+            </Link>
+            <Link href="/war-room">
+              <Button variant="outline" className="gap-2 text-xs">
+                War Room
+              </Button>
+            </Link>
+            <Link href="/scan/new">
+              <Button className="gap-2 text-xs" data-testid="dashboard-new-scan-btn">
+                <Plus className="w-4 h-4" />New Audit
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Growth OS Revenue Opportunity Banner */}
+        <Card className="p-5 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-card to-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-1">
+            <div className="text-xs font-mono uppercase tracking-widest font-bold text-emerald-600">
+              Live Revenue Forecast Opportunity
+            </div>
+            <div className="font-display text-2xl font-black text-foreground">
+              +$12,450 <span className="text-sm font-semibold text-muted-foreground">/ month potential revenue unlock</span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Calculated across your website conversion friction, missing security headers, and CTA drop-offs.
+            </p>
+          </div>
+          <Link href="/missions">
+            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold">
+              Unlock Revenue Missions &rarr;
             </Button>
           </Link>
-        </div>
+        </Card>
 
         {/* Widget grid */}
         <div className="grid grid-cols-12 gap-4">

@@ -104,6 +104,50 @@ const migrate = async () => {
       );
     `);
 
+    // 6. Create Digital Twins Table
+    console.log('Creating digital_twins table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS digital_twins (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+        brand_voice TEXT,
+        target_audience TEXT,
+        products_json JSONB,
+        pricing_model TEXT,
+        competitors_json JSONB,
+        memory_context TEXT,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 7. Create Copilot Briefs Table
+    console.log('Creating copilot_briefs table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS copilot_briefs (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        brief_text TEXT NOT NULL,
+        alerts_json JSONB,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    // 8. Create Growth Missions Table
+    console.log('Creating growth_missions table...');
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS growth_missions (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        reward_score INTEGER DEFAULT 10,
+        impact_usd INTEGER DEFAULT 500,
+        category VARCHAR(50) DEFAULT 'CRO',
+        done BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     console.log('Schema migration completed successfully!');
   } catch (err) {
     console.error('Migration failed:', err);

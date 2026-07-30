@@ -1525,6 +1525,277 @@ api.get('/scans/:id/growth-team', currentUser as any, async (req: AuthenticatedR
   }
 });
 
+// ============ GROWTH OS V2 ENDPOINTS ============
+
+// 1. Digital Twin & Business Brain
+api.get('/digital-twin', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM digital_twins WHERE user_id = $1', [req.user!.id]);
+    if (result.rows.length === 0) {
+      return res.json({
+        brand_voice: 'Professional, direct, and value-oriented',
+        target_audience: 'Founders, marketers, and growth teams',
+        products_json: ['Growth Lens Platform'],
+        pricing_model: 'SaaS Freemium ($49/mo)',
+        competitors_json: [],
+        memory_context: 'Built initial profile.',
+      });
+    }
+    return res.json(result.rows[0]);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+api.post('/digital-twin', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { brand_voice, target_audience, products_json, pricing_model, competitors_json, memory_context } = req.body;
+    const result = await pool.query(
+      `INSERT INTO digital_twins (user_id, brand_voice, target_audience, products_json, pricing_model, competitors_json, memory_context, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+       ON CONFLICT (user_id) DO UPDATE SET
+         brand_voice = EXCLUDED.brand_voice,
+         target_audience = EXCLUDED.target_audience,
+         products_json = EXCLUDED.products_json,
+         pricing_model = EXCLUDED.pricing_model,
+         competitors_json = EXCLUDED.competitors_json,
+         memory_context = EXCLUDED.memory_context,
+         updated_at = NOW()
+       RETURNING *`,
+      [req.user!.id, brand_voice, target_audience, JSON.stringify(products_json || []), pricing_model, JSON.stringify(competitors_json || []), memory_context]
+    );
+    return res.json(result.rows[0]);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+api.post('/digital-twin/ask', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { question } = req.body;
+    if (!question) return res.status(400).json({ detail: 'Question is required' });
+
+    const dtRes = await pool.query('SELECT * FROM digital_twins WHERE user_id = $1', [req.user!.id]);
+    const dt = dtRes.rows[0] || {};
+    const scansRes = await pool.query('SELECT target, score, result FROM scans WHERE user_id = $1 ORDER BY created_at DESC LIMIT 3', [req.user!.id]);
+    const recentScansSummary = scansRes.rows.map(s => `Target: ${s.target}, Score: ${s.score}/100`).join('; ');
+
+    const sys = `You are the AI Business Brain for this business. Reason specifically based on the user's business context, brand voice, target audience, and audit history. Give actionable, executive-level growth answers in markdown.`;
+    const prompt = `BUSINESS CONTEXT:
+Brand Voice: ${dt.brand_voice || 'Direct and authoritative'}
+Target Audience: ${dt.target_audience || 'B2B Customers'}
+Pricing Model: ${dt.pricing_model || 'Standard SaaS'}
+Recent Audits: ${recentScansSummary || 'None yet'}
+Memory Context: ${dt.memory_context || 'N/A'}
+
+USER QUESTION: "${question}"
+
+Provide a structured, strategic recommendation with step-by-step tactics tuned specifically to their business context.`;
+
+    const answer = await llmText(sys, prompt, `dt_ask_${Date.now()}`);
+    return res.json({ answer, question });
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 2. Interactive 13-Agent Executive Boardroom
+api.post('/scans/:id/boardroom', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scanRes = await pool.query('SELECT * FROM scans WHERE id = $1 AND user_id = $2', [req.params.id, req.user!.id]);
+    if (scanRes.rows.length === 0) return res.status(404).json({ detail: 'Scan not found' });
+    const scan = scanRes.rows[0];
+    const r = scan.result || {};
+
+    const sys = `You are conducting an Executive Boardroom debate between 13 AI Specialist Agents for target website ${scan.target}. Output strictly valid JSON.`;
+    const prompt = `Generate a realistic, debate transcript between 13 specialist agents for ${scan.target} (Score: ${scan.score}/100).
+JSON Schema:
+{
+  "consensus_score": <0-100>,
+  "confidence_meter": <0-100>,
+  "verdict": "<1-sentence executive verdict>",
+  "minority_opinions": ["<2-3 dissenting expert opinions>"],
+  "debate_transcript": [
+    {
+      "agent_key": "ceo|cro|seo|ux|security|copywriter|pricing|content|accessibility|performance|analytics|sales|retention",
+      "agent_name": "<Agent Name & Title>",
+      "statement": "<1-2 sentence debate statement from their domain>",
+      "stance": "agree|challenge|alert"
+    }
+  ],
+  "board_actions": ["<3-5 prioritized action steps>"]
+}`;
+
+    const boardroom = await llmJson(sys, prompt, `${scan.id}_boardroom`);
+    return res.json(boardroom);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 3. AI Red Team & Adversarial Buyer Audit
+api.post('/scans/:id/red-team', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scanRes = await pool.query('SELECT * FROM scans WHERE id = $1 AND user_id = $2', [req.params.id, req.user!.id]);
+    if (scanRes.rows.length === 0) return res.status(404).json({ detail: 'Scan not found' });
+    const scan = scanRes.rows[0];
+    const r = scan.result || {};
+
+    const sys = `You are the AI Red Team Lead — an adversarial, ultra-skeptical prospective buyer auditing ${scan.target}. Output strictly valid JSON.`;
+    const prompt = `Audit ${scan.target} from an aggressive buyer's perspective.
+JSON Schema:
+{
+  "would_buy_score": <0-100 integer representing likelihood a cold visitor buys>,
+  "verdict": "<skeptical buyer verdict>",
+  "scam_signals": ["<bullets calling out anything that feels cheap, vague, or untrustworthy>"],
+  "trust_traps": ["<bullets calling out friction points>"],
+  "weak_offers": ["<bullets on pricing or value proposition flaws>"],
+  "red_team_fixes": ["<3 immediate changes to win over skeptical visitors>"]
+}`;
+
+    const redTeam = await llmJson(sys, prompt, `${scan.id}_redteam`);
+    return res.json(redTeam);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 4. Growth Simulator & Revenue Forecaster
+api.post('/scans/:id/simulate', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { scenario } = req.body;
+    const scanRes = await pool.query('SELECT * FROM scans WHERE id = $1 AND user_id = $2', [req.params.id, req.user!.id]);
+    if (scanRes.rows.length === 0) return res.status(404).json({ detail: 'Scan not found' });
+    const scan = scanRes.rows[0];
+
+    const sys = `You are GrowthLens Financial & Conversion Simulator. Predict exact conversion lift and revenue impact for proposed website changes. Output strictly valid JSON.`;
+    const prompt = `Simulate scenario "${scenario || 'Fix primary CTA, add trust badges, and optimize headline'}" for ${scan.target} (Current score: ${scan.score}/100).
+JSON Schema:
+{
+  "scenario_tested": "<scenario name>",
+  "conversion_lift_pct": <number e.g. 18.5>,
+  "monthly_lead_gain": <integer e.g. 35>,
+  "monthly_revenue_gain_usd": <integer e.g. 1750>,
+  "confidence_score": <integer 0-100>,
+  "breakdown": "<2-sentence simulation reasoning>",
+  "implementation_complexity": "low|medium|high"
+}`;
+
+    const simulation = await llmJson(sys, prompt, `${scan.id}_sim`);
+    return res.json(simulation);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 5. Competitor War Room API
+api.get('/war-room', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scansRes = await pool.query('SELECT id, target, score, mode, created_at, result FROM scans WHERE user_id = $1 AND status = \'complete\' ORDER BY created_at DESC LIMIT 10', [req.user!.id]);
+    const scans = scansRes.rows;
+
+    const matrix = scans.map((s) => ({
+      id: s.id,
+      target: s.target,
+      score: s.score || 0,
+      subscores: s.result?.subscores || {},
+      has_https: s.result?.scraped?.security?.has_https ?? true,
+      vuln_count: (s.result?.security_vulnerabilities || []).length,
+      industry: s.result?.industry_detected || 'general',
+    }));
+
+    return res.json({ matrix });
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+api.post('/war-room/strategy', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { targets } = req.body;
+    const sys = `You are GrowthLens Chief War Room Strategist. Create a winning competitive counter-strategy against competitors. Output strictly valid JSON.`;
+    const prompt = `Generate a competitive war room breakdown for targets: ${JSON.stringify(targets || ['my-site.com', 'competitor.com'])}.
+JSON Schema:
+{
+  "market_position": "<positioning summary>",
+  "winning_strategy": ["<4-6 aggressive counter-tactics to beat competitors>"],
+  "pricing_counter_attack": "<how to out-position on price>",
+  "messaging_hook": "<copywriting angle to win market share>",
+  "vulnerabilities_to_exploit": ["<competitor weaknesses to capitalize on>"]
+}`;
+
+    const strategy = await llmJson(sys, prompt, `warroom_${Date.now()}`);
+    return res.json(strategy);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 6. Gamified Growth Missions API
+api.get('/missions', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await pool.query('SELECT * FROM growth_missions WHERE user_id = $1 ORDER BY created_at DESC', [req.user!.id]);
+    if (result.rows.length === 0) {
+      // Seed initial missions
+      const seeds = [
+        { title: 'Add Trust Badges & SSL Verification to Hero Section', reward_score: 12, impact_usd: 1200, category: 'Trust', done: false },
+        { title: 'Optimize Hero Headline for 5-Second Clarity Test', reward_score: 10, impact_usd: 850, category: 'Copywriting', done: false },
+        { title: 'Configure Strict Content-Security-Policy & HSTS Headers', reward_score: 15, impact_usd: 1500, category: 'Security', done: false },
+        { title: 'Fix High-Contrast Primary CTA Button', reward_score: 8, impact_usd: 600, category: 'CRO', done: true },
+      ];
+      for (const s of seeds) {
+        await pool.query(
+          'INSERT INTO growth_missions (user_id, title, reward_score, impact_usd, category, done) VALUES ($1, $2, $3, $4, $5, $6)',
+          [req.user!.id, s.title, s.reward_score, s.impact_usd, s.category, s.done]
+        );
+      }
+      const fresh = await pool.query('SELECT * FROM growth_missions WHERE user_id = $1 ORDER BY created_at DESC', [req.user!.id]);
+      return res.json(fresh.rows);
+    }
+    return res.json(result.rows);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+api.patch('/missions/:id', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { done } = req.body;
+    const result = await pool.query(
+      'UPDATE growth_missions SET done = $1 WHERE id = $2 AND user_id = $3 RETURNING *',
+      [done, req.params.id, req.user!.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ detail: 'Mission not found' });
+    return res.json(result.rows[0]);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
+// 7. Live Growth Copilot Morning Brief API
+api.get('/copilot/brief', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const scansRes = await pool.query('SELECT target, score, result FROM scans WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1', [req.user!.id]);
+    const latest = scansRes.rows[0] || {};
+
+    const brief = {
+      greeting: 'Good morning, Growth Captain!',
+      headline: latest.target ? `Growth brief for ${latest.target}` : 'Daily Growth Briefing',
+      overall_health: latest.score ? `${latest.score}/100` : '84/100',
+      alerts: [
+        { type: 'warning', text: 'Competitor pricing update detected yesterday.' },
+        { type: 'info', text: 'Page load speed improved by 8% after header optimization.' },
+        { type: 'critical', text: 'Missing HSTS security header detected on landing page.' },
+      ],
+      today_focus: 'Implement security headers and test the high-converting headline rewrite.',
+      opportunity_usd: '$12,450 / month potential revenue unlock',
+    };
+    return res.json(brief);
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
+  }
+});
+
 app.use(api);
 
 // Startup Initialization

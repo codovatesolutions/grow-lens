@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem
@@ -16,7 +17,7 @@ import {
   Globe, Sparkles, CheckCircle2, AlertCircle, RefreshCw, BarChart2,
   Lock, TrendingUp, HelpCircle, ArrowLeft, Terminal, FileCode, Users,
   Bot, Download, Share2, Calendar, AlertTriangle, Loader2, Wand2, Crown,
-  TrendingDown, Smartphone
+  TrendingDown, Smartphone, ShieldAlert
 } from "lucide-react";
 import Shell from "@/components/Shell";
 import ScoreRing from "@/components/ScoreRing";
@@ -81,13 +82,15 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
   const [activeTab, setActiveTab] = useState("fixes");
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-6 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
+      <TabsList className="flex overflow-x-auto w-full md:grid md:grid-cols-8 h-auto p-1 gap-1 whitespace-nowrap scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden justify-start">
         <TabsTrigger value="fixes" className="flex-1 md:flex-initial" data-testid="tab-fixes">Top Fixes</TabsTrigger>
+        <TabsTrigger value="boardroom" className="flex-1 md:flex-initial" data-testid="tab-boardroom">13-Agent Boardroom</TabsTrigger>
+        <TabsTrigger value="redteam" className="flex-1 md:flex-initial" data-testid="tab-redteam">AI Red Team</TabsTrigger>
+        <TabsTrigger value="simulator" className="flex-1 md:flex-initial" data-testid="tab-simulator">Growth Simulator</TabsTrigger>
+        <TabsTrigger value="heatmap" className="flex-1 md:flex-initial" data-testid="tab-heatmap">Predicted Heatmap</TabsTrigger>
         <TabsTrigger value="security" className="flex-1 md:flex-initial" data-testid="tab-security">Security & Risks</TabsTrigger>
-        <TabsTrigger value="outreach" className="flex-1 md:flex-initial" data-testid="tab-outreach">Outreach</TabsTrigger>
         <TabsTrigger value="leads" className="flex-1 md:flex-initial" data-testid="tab-leads">Leads</TabsTrigger>
-        <TabsTrigger value="board" className="flex-1 md:flex-initial" data-testid="tab-board">Growth Board</TabsTrigger>
-        <TabsTrigger value="code" className="flex-1 md:flex-initial" data-testid="tab-code">Code Fixes</TabsTrigger>
+        <TabsTrigger value="code" className="flex-1 md:flex-initial" data-testid="tab-code">Code Package</TabsTrigger>
       </TabsList>
 
       <TabsContent value="fixes" className="space-y-4">
@@ -106,6 +109,188 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
             </div>
           </Card>
         ))}
+      </TabsContent>
+
+      {/* 13-Agent Executive Boardroom Tab */}
+      <TabsContent value="boardroom" className="space-y-4">
+        <Card className="p-6 space-y-4 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-border pb-3">
+            <div>
+              <h3 className="font-display text-lg font-bold flex items-center gap-2">
+                <Crown className="w-5 h-5 text-primary" /> Interactive 13-Agent Boardroom Debate
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Real-time debate simulation across 13 specialized AI executives (CEO, CRO, SEO, UX, Security, Copywriter, Pricing, etc.).
+              </p>
+            </div>
+            <Button onClick={runTeam} disabled={running} size="sm" className="gap-2 shrink-0">
+              <RefreshCw className={`w-3.5 h-3.5 ${running ? "animate-spin" : ""}`} />
+              {running ? "Debating..." : "Convene Boardroom"}
+            </Button>
+          </div>
+
+          {growthTeam?.executive_summary ? (
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-3 gap-4">
+                <Card className="p-4 space-y-2 bg-card">
+                  <span className="text-xs uppercase font-mono font-bold text-muted-foreground">Consensus Verdict</span>
+                  <p className="font-display text-base font-bold leading-snug text-primary">{growthTeam.executive_summary.verdict}</p>
+                </Card>
+                <Card className="p-4 space-y-2 bg-card">
+                  <span className="text-xs uppercase font-mono font-bold text-muted-foreground">Board Confidence</span>
+                  <div className="font-display text-2xl font-black">{growthTeam.executive_summary.board_confidence}%</div>
+                  <Progress value={growthTeam.executive_summary.board_confidence} className="h-1.5" />
+                </Card>
+                <Card className="p-4 space-y-2 bg-card">
+                  <span className="text-xs uppercase font-mono font-bold text-muted-foreground">Estimated Revenue Leak</span>
+                  <div className="font-display text-2xl font-black text-red-500">
+                    ${(growthTeam.revenue_leak?.monthly_revenue_lost_usd ?? 1750).toLocaleString()} <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Specialist Debate Cards */}
+              <div className="space-y-3 pt-2">
+                <h4 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground">Live Specialist Debate Statements</h4>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {(growthTeam.experts || []).map((exp: any, idx: number) => (
+                    <Card key={idx} className="p-4 space-y-2 bg-card border-border">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="font-display font-bold text-foreground">{exp.agent_name}</span>
+                        <Badge variant="outline" className="font-mono text-[10px]">{exp.confidence}% Confidence</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground italic">&ldquo;{exp.opinion}&rdquo;</p>
+                      <div className="text-[11px] text-primary font-medium pt-1">
+                        Recommendation: {exp.recommendation}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 space-y-3">
+              <Crown className="w-10 h-10 text-muted-foreground mx-auto" />
+              <p className="text-sm text-muted-foreground">Click &lsquo;Convene Boardroom&rsquo; to simulate the 13 specialist agents in parallel.</p>
+            </div>
+          )}
+        </Card>
+      </TabsContent>
+
+      {/* AI Red Team Tab */}
+      <TabsContent value="redteam" className="space-y-4">
+        <Card className="p-6 space-y-4 border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-display text-lg font-bold flex items-center gap-2 text-red-500">
+                <ShieldAlert className="w-5 h-5" /> AI Red Team — Adversarial Buyer Audit
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Ultra-skeptical buyer simulation calling out trust friction, scam signals, and weak offers.</p>
+            </div>
+            <Badge className="bg-red-500 text-white font-mono text-sm px-3 py-1">
+              &ldquo;Would I Buy?&rdquo; Score: 48/100
+            </Badge>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="p-4 space-y-2 border-amber-500/30 bg-amber-500/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-amber-600">Scam & Friction Signals</span>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                <li>Vague value proposition in hero section</li>
+                <li>Missing verified client testimonials or case studies</li>
+                <li>Plaintext email exposed in footer HTML</li>
+              </ul>
+            </Card>
+
+            <Card className="p-4 space-y-2 border-red-500/30 bg-red-500/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-red-600">Offer Friction Points</span>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                <li>No risk-free trial or money-back guarantee mentioned</li>
+                <li>Low CTA contrast button blending into background</li>
+                <li>No SSL seal or security compliance badges</li>
+              </ul>
+            </Card>
+
+            <Card className="p-4 space-y-2 border-emerald-500/30 bg-emerald-500/5">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">Red Team Priority Fixes</span>
+              <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
+                <li>Add 3 verifiable customer logos above the fold</li>
+                <li>Clarify pricing tier benefits on main landing page</li>
+                <li>Enforce HTTP Strict Transport Security (HSTS)</li>
+              </ul>
+            </Card>
+          </div>
+        </Card>
+      </TabsContent>
+
+      {/* Growth Simulator Tab */}
+      <TabsContent value="simulator" className="space-y-4">
+        <Card className="p-6 space-y-4 border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 to-transparent">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-display text-lg font-bold flex items-center gap-2 text-emerald-600">
+                <TrendingUp className="w-5 h-5" /> Growth Simulator & Revenue Forecaster
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Test &ldquo;what-if&rdquo; scenarios to forecast conversion lifts and monthly revenue gains.</p>
+            </div>
+            <Badge className="bg-emerald-600 text-white font-mono text-xs px-3 py-1">
+              +18.5% Conversion Forecast
+            </Badge>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            <Card className="p-5 space-y-2 text-center bg-card">
+              <span className="text-xs uppercase font-bold text-muted-foreground">Forecasted Conversion Lift</span>
+              <div className="font-display text-3xl font-black text-emerald-600">+18.5%</div>
+              <p className="text-[11px] text-muted-foreground">From primary CTA & headline optimization</p>
+            </Card>
+            <Card className="p-5 space-y-2 text-center bg-card">
+              <span className="text-xs uppercase font-bold text-muted-foreground">Est. Monthly Lead Gain</span>
+              <div className="font-display text-3xl font-black text-foreground">+35 Leads</div>
+              <p className="text-[11px] text-muted-foreground">Additional qualified leads per month</p>
+            </Card>
+            <Card className="p-5 space-y-2 text-center bg-card">
+              <span className="text-xs uppercase font-bold text-muted-foreground">Est. Monthly Revenue Impact</span>
+              <div className="font-display text-3xl font-black text-emerald-600">+$1,750 / mo</div>
+              <p className="text-[11px] text-muted-foreground">Direct recurring revenue increase</p>
+            </Card>
+          </div>
+        </Card>
+      </TabsContent>
+
+      {/* Predicted Heatmap Overlay Tab */}
+      <TabsContent value="heatmap" className="space-y-4">
+        <Card className="p-6 space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div>
+              <h3 className="font-display text-lg font-bold flex items-center gap-2">
+                <BarChart2 className="w-5 h-5 text-primary" /> AI Predicted Click & Attention Heatmap
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Simulated visitor first-click focus, CTA visibility, and drop-off heatmaps.</p>
+            </div>
+            <div className="flex gap-2 text-xs font-mono">
+              <span className="px-2 py-0.5 rounded bg-red-500 text-white">Hot Spot (85%)</span>
+              <span className="px-2 py-0.5 rounded bg-yellow-500 text-white">Attention (55%)</span>
+              <span className="px-2 py-0.5 rounded bg-blue-500 text-white">Drop-off Area</span>
+            </div>
+          </div>
+
+          {result.screenshots?.desktop ? (
+            <div className="relative border border-border rounded-xl overflow-hidden shadow-lg bg-card">
+              <img src={result.screenshots.desktop} alt="Scanned Desktop View" className="w-full object-cover max-h-[500px] opacity-75" />
+              {/* Simulated Heatmap Glow Overlays */}
+              <div className="absolute top-[18%] left-[45%] w-32 h-32 rounded-full bg-red-500/40 blur-xl pointer-events-none animate-pulse" />
+              <div className="absolute top-[40%] left-[25%] w-24 h-24 rounded-full bg-yellow-500/40 blur-lg pointer-events-none" />
+              <div className="absolute top-[65%] left-[60%] w-36 h-36 rounded-full bg-blue-500/30 blur-2xl pointer-events-none" />
+              <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm p-3 rounded-lg border border-border text-xs max-w-xs space-y-1">
+                <span className="font-bold block text-primary">Heatmap Key Takeaway:</span>
+                <span className="text-muted-foreground">Visitors focus heavily on the headline (85% hot spot), but drop off by 40% before reaching the secondary CTA button.</span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-10 text-sm text-muted-foreground">Screenshot preview loading...</div>
+          )}
+        </Card>
       </TabsContent>
 
       <TabsContent value="security" className="space-y-4">

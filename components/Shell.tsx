@@ -7,13 +7,18 @@ import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Plus, Users, Sparkles, CalendarDays, FileText,
-  Settings, CreditCard, LogOut, Sun, Moon, Telescope, Menu, X
+  Settings, CreditCard, LogOut, Sun, Moon, Telescope, Menu, X,
+  Brain, Swords, Trophy, Store
 } from "lucide-react";
 import React, { useState } from "react";
 
 const items = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, tid: "nav-dashboard" },
-  { href: "/scan/new", label: "New Scan", icon: Plus, tid: "nav-new-scan" },
+  { href: "/dashboard", label: "Growth OS", icon: LayoutDashboard, tid: "nav-dashboard" },
+  { href: "/digital-twin", label: "AI Digital Twin", icon: Brain, tid: "nav-digital-twin" },
+  { href: "/war-room", label: "War Room", icon: Swords, tid: "nav-war-room" },
+  { href: "/missions", label: "Growth Missions", icon: Trophy, tid: "nav-missions" },
+  { href: "/marketplace", label: "Marketplace", icon: Store, tid: "nav-marketplace" },
+  { href: "/scan/new", label: "New Audit", icon: Plus, tid: "nav-new-scan" },
   { href: "/leads", label: "Lead List", icon: Users, tid: "nav-leads" },
   { href: "/creator", label: "Creator Insights", icon: Sparkles, tid: "nav-creator" },
   { href: "/planner", label: "Content Planner", icon: CalendarDays, tid: "nav-planner" },
