@@ -124,6 +124,19 @@ export default function Landing() {
         </div>
       </section>
 
+      <section id="how" className="border-b border-border">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Two modes. One growth engine.</h2>
+          <div className="grid md:grid-cols-2 gap-px bg-border border border-border mt-10">
+            <div className="bg-card p-8">
+              <Globe className="w-6 h-6 text-primary" />
+              <h3 className="font-display text-2xl font-bold mt-4">Business Mode</h3>
+              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">Paste a website. We analyze the homepage, CTAs, trust elements, navigation, SEO, and contact paths. You get a score, 5 prioritized fixes, 3 personalized outreach emails, and a lead list.</p>
+              <ul className="mt-5 space-y-2 text-sm">
+                {["0-100 conversion score","Top 5 fixes with the 'why'","3 outreach email drafts","Sales pitch angles","Public contact extraction"].map(x=>(
+                  <li key={x} className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0"/>{x}</li>
+                ))}
+              </ul>
             </div>
             <div className="bg-card p-8">
               <Sparkles className="w-6 h-6 text-accent" />
