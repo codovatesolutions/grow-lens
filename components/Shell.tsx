@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Plus, Users, Sparkles, CalendarDays, FileText,
-  Settings, CreditCard, LogOut, Sun, Moon, Telescope, Menu, X,
+  Settings, CreditCard, LogOut, Telescope, Menu, X,
   Brain, Swords, Trophy, Store
 } from "lucide-react";
 import React, { useState } from "react";
@@ -18,7 +17,7 @@ const items = [
   { href: "/war-room", label: "War Room", icon: Swords, tid: "nav-war-room" },
   { href: "/missions", label: "Growth Missions", icon: Trophy, tid: "nav-missions" },
   { href: "/marketplace", label: "Marketplace", icon: Store, tid: "nav-marketplace" },
-  { href: "/scan/new", label: "New Audit", icon: Plus, tid: "nav-new-scan" },
+  { href: "/scan/new", label: "New Scan", icon: Plus, tid: "nav-new-scan" },
   { href: "/leads", label: "Lead List", icon: Users, tid: "nav-leads" },
   { href: "/creator", label: "Creator Insights", icon: Sparkles, tid: "nav-creator" },
   { href: "/planner", label: "Content Planner", icon: CalendarDays, tid: "nav-planner" },
@@ -29,7 +28,6 @@ const items = [
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { theme, toggle } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,10 +38,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
         <div className="px-6 py-5 border-b border-border">
           <div className="flex items-center gap-2">
-            <Telescope className="w-5 h-5 text-primary" />
-            <span className="font-display text-lg font-bold tracking-tight">GrowthLens<span className="text-primary">.</span></span>
+            <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-7 h-7 rounded-md object-cover border border-border" />
+            <span className="font-display text-lg font-bold tracking-tight">LensGrowth<span className="text-primary">.</span></span>
           </div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1 pl-7">by Codovate Solutions</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1 pl-9">by Codovate Solutions</div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
           {items.map((it) => {
@@ -79,7 +77,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <LogOut className="w-4 h-4 mr-2" /> Logout
           </Button>
           <div className="text-[10px] text-muted-foreground text-center mt-3 pt-3 border-t border-border flex items-center justify-center gap-2">
-            <img src="/brand/codovate-logo.png" alt="Codovate Solutions" className="w-5 h-5 object-contain" />
+            <img src="/brand/codovate-logo.jpeg" alt="Codovate Solutions" className="w-5 h-5 object-contain" />
             <span>&copy; 2026 &bull; <span className="text-foreground font-semibold">Codovate Solutions</span></span>
           </div>
         </div>
@@ -93,10 +91,10 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             <div className="px-6 py-4 border-b border-border flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <Telescope className="w-5 h-5 text-primary" />
-                  <span className="font-display text-lg font-bold tracking-tight">GrowthLens<span className="text-primary">.</span></span>
+                  <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-6 h-6 rounded-md object-cover border border-border" />
+                  <span className="font-display text-lg font-bold tracking-tight">LensGrowth<span className="text-primary">.</span></span>
                 </div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-0.5 pl-7">by Codovate Solutions</div>
+                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-0.5 pl-8">by Codovate Solutions</div>
               </div>
               <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} data-testid="mobile-menu-close">
                 <X className="w-5 h-5" />
@@ -154,14 +152,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </Button>
             <div className="font-display text-lg font-bold flex items-center gap-1.5 md:hidden">
-              <Telescope className="w-4 h-4 text-primary" />
-              <span>GrowthLens<span className="text-primary">.</span></span>
+              <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-5 h-5 rounded object-cover border border-border" />
+              <span>LensGrowth<span className="text-primary">.</span></span>
             </div>
           </div>
           <div className="flex-1" />
-          <Button variant="ghost" size="icon" onClick={toggle} data-testid="theme-toggle">
-            {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </Button>
         </header>
         <div className="flex-1 p-4 md:p-8 overflow-y-auto overflow-x-hidden max-w-full">{children}</div>
       </main>

@@ -4,7 +4,7 @@ import { Toaster } from "sonner";
 import React from "react";
 
 export const metadata = {
-  title: "GrowthLens AI",
+  title: "LensGrowth AI",
   description: "AI-powered website conversion auditor and social growth engine.",
 };
 

@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useTheme } from "@/lib/theme";
 import {
   Telescope, ArrowRight, Globe, Sparkles, CheckCircle2, BarChart3, MailPlus,
-  Users, CalendarDays, Sun, Moon, LucideIcon
+  Users, CalendarDays, LucideIcon
 } from "lucide-react";
 
 interface StatProps {
@@ -37,15 +36,14 @@ const Feature = ({ icon: Icon, title, body }: FeatureProps) => (
 );
 
 export default function Landing() {
-  const { theme, toggle } = useTheme();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Telescope className="w-5 h-5 text-primary" />
+            <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-7 h-7 rounded-md object-cover border border-border" />
             <span className="font-display text-lg font-bold">
-              GrowthLens<span className="text-primary">.</span>
+              LensGrowth<span className="text-primary">.</span>
             </span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
@@ -54,9 +52,6 @@ export default function Landing() {
             <a href="#pricing" className="hover:text-foreground">Pricing</a>
           </nav>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={toggle} data-testid="landing-theme-toggle">
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </Button>
             <Link href="/login">
               <Button variant="ghost" size="sm" data-testid="landing-login-btn">Log in</Button>
             </Link>
@@ -78,7 +73,7 @@ export default function Landing() {
               your website or social profile.
             </h1>
             <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
-              Paste a URL or a social link. GrowthLens AI reads it, scores it 0&ndash;100, and tells you in plain English what to fix, what to post, and how to win the next 30 days.
+              Paste a URL or a social link. LensGrowth AI reads it, scores it 0&ndash;100, and tells you in plain English what to fix, what to post, and how to win the next 30 days.
             </p>
             <div className="mt-8 flex wrap gap-3">
               <Link href="/signup">
@@ -90,28 +85,38 @@ export default function Landing() {
                 <Button size="lg" variant="outline" data-testid="hero-how-btn">How it works</Button>
               </a>
             </div>
-            <div className="mt-10 flex gap-6 text-xs text-muted-foreground">
-              <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-primary" /> No credit card</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-primary" /> Plain-English reports</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-primary" /> Public data only</span>
+            <div className="mt-8 flex items-center gap-6 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> No credit card</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Plain-English reports</span>
+              <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Public data only</span>
             </div>
           </div>
-          <div className="md:col-span-5">
-            <div className="border border-border bg-card rounded-md overflow-hidden">
-              <div className="px-5 py-3 border-b border-border text-xs uppercase tracking-[0.2em] text-muted-foreground flex justify-between">
-                <span>Live demo</span><span className="font-mono text-primary">SCORE 82</span>
+
+          <div className="md:col-span-5 flex items-center">
+            <div className="w-full border border-border rounded-xl bg-card/60 backdrop-blur p-6 shadow-2xl">
+              <div className="flex items-center justify-between text-xs text-muted-foreground pb-4 border-b border-border">
+                <span className="font-mono uppercase">Live Demo</span>
+                <span className="font-mono text-primary font-bold">Score 82</span>
               </div>
-              <div className="p-6 space-y-4">
-                <div className="font-mono text-xs text-muted-foreground">https://acme-bakery.com</div>
-                <div className="font-display text-2xl font-bold leading-tight">Top fix: weak above-the-fold CTA</div>
-                <p className="text-sm text-muted-foreground">Your hero has 3 competing buttons. Cut to one: <span className="text-foreground font-medium">"Order today's bread"</span>. Mobile bounce drops ~12% in similar sites.</p>
-                <div className="grid grid-cols-3 border border-border rounded">
-                  {[{k:"Trust",v:"7/10"},{k:"SEO",v:"6/10"},{k:"CTA",v:"4/10"}].map(s=>(
-                    <div key={s.k} className="p-3 text-center border-r last:border-r-0 border-border">
-                      <div className="font-mono text-sm font-semibold">{s.v}</div>
-                      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{s.k}</div>
-                    </div>
-                  ))}
+              <div className="mt-4 space-y-3">
+                <div className="text-xs text-muted-foreground font-mono">https://acme-bakery.com</div>
+                <h3 className="font-display font-semibold text-base">Top fix: weak above-the-fold CTA</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Your hero has 3 competing buttons. Cut to one: <strong className="text-foreground">&ldquo;Order today&rsquo;s bread&rdquo;</strong>. Mobile bounce drops ~12% in similar sites.
+                </p>
+                <div className="grid grid-cols-3 gap-2 pt-2 text-center text-xs">
+                  <div className="p-2 border border-border rounded">
+                    <div className="font-bold">7/10</div>
+                    <div className="text-[10px] text-muted-foreground">Trust</div>
+                  </div>
+                  <div className="p-2 border border-border rounded">
+                    <div className="font-bold">6/10</div>
+                    <div className="text-[10px] text-muted-foreground">SEO</div>
+                  </div>
+                  <div className="p-2 border border-border rounded">
+                    <div className="font-bold">4/10</div>
+                    <div className="text-[10px] text-muted-foreground">CTA</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -119,19 +124,6 @@ export default function Landing() {
         </div>
       </section>
 
-      <section id="how" className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Two modes. One growth engine.</h2>
-          <div className="grid md:grid-cols-2 gap-px bg-border border border-border mt-10">
-            <div className="bg-card p-8">
-              <Globe className="w-6 h-6 text-primary" />
-              <h3 className="font-display text-2xl font-bold mt-4">Business Mode</h3>
-              <p className="text-sm text-muted-foreground mt-3 leading-relaxed">Paste a website. We analyze the homepage, CTAs, trust elements, navigation, SEO, and contact paths. You get a score, 5 prioritized fixes, 3 personalized outreach emails, and a lead list.</p>
-              <ul className="mt-5 space-y-2 text-sm">
-                {["0-100 conversion score","Top 5 fixes with the 'why'","3 outreach email drafts","Sales pitch angles","Public contact extraction"].map(x=>(
-                  <li key={x} className="flex gap-2 items-start"><CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0"/>{x}</li>
-                ))}
-              </ul>
             </div>
             <div className="bg-card p-8">
               <Sparkles className="w-6 h-6 text-accent" />
@@ -185,11 +177,11 @@ export default function Landing() {
       </section>
 
       <footer className="py-10 text-center text-xs text-muted-foreground space-y-3">
-        <div>&copy; 2026 GrowthLens AI &middot; Built for clarity over hype.</div>
+        <div>&copy; 2026 LensGrowth AI &middot; Built for clarity over hype.</div>
         <div className="flex items-center justify-center gap-2 flex-wrap">
           <span>A product of</span>
           <a href="#" className="inline-flex items-center gap-2 font-semibold text-foreground hover:text-primary transition-colors">
-            <img src="/brand/codovate-logo.png" alt="Codovate Solutions" className="w-7 h-7 object-contain" />
+            <img src="/brand/codovate-logo.jpeg" alt="Codovate Solutions" className="w-7 h-7 object-contain" />
             Codovate Solutions
           </a>
           <span>&middot; Built by Codovate Solutions</span>

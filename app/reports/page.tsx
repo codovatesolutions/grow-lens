@@ -52,7 +52,7 @@ export default function ReportsPage() {
           </div>
           <Button asChild className="flex items-center gap-2">
             <Link href="/scan/new">
-              <Plus className="w-4 h-4" /> Create New Audit
+              <Plus className="w-4 h-4" /> Create New Scan
             </Link>
           </Button>
         </div>

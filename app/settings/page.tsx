@@ -3,18 +3,16 @@
 import { useState } from "react";
 import Shell from "@/components/Shell";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Settings, User, Moon, Sun, Lock, Shield, CheckCircle } from "lucide-react";
+import { Settings, User, Lock, Shield, CheckCircle } from "lucide-react";
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const { theme, toggle } = useTheme();
 
   const [name, setName] = useState(user?.name || "");
   const [industry, setIndustry] = useState("auto");
@@ -96,23 +94,6 @@ export default function SettingsPage() {
               {savingProfile ? "Saving..." : "Save Profile"}
             </Button>
           </form>
-        </Card>
-
-        {/* Appearance Settings */}
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-border pb-3">
-            <div className="flex items-center gap-2">
-              {theme === "dark" ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
-              <h2 className="font-display font-bold text-lg">Appearance & Theme</h2>
-            </div>
-            <Button variant="outline" size="sm" onClick={toggle} className="flex items-center gap-2">
-              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              Switch to {theme === "dark" ? "Light" : "Dark"} Mode
-            </Button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Current active theme: <strong className="text-foreground capitalize">{theme} Mode</strong>. Choose your preferred dashboard theme.
-          </p>
         </Card>
 
         {/* Password & Security Card */}

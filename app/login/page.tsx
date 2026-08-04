@@ -95,9 +95,9 @@ export default function Login() {
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="hidden md:flex flex-col justify-between p-10 bg-secondary text-secondary-foreground">
         <Link href="/" className="flex items-center gap-2">
-          <Telescope className="w-5 h-5 text-primary" />
+          <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-7 h-7 rounded-md object-cover border border-border" />
           <span className="font-display text-lg font-bold">
-            GrowthLens<span className="text-primary">.</span>
+            LensGrowth<span className="text-primary">.</span>
           </span>
         </Link>
         <div>
@@ -107,7 +107,7 @@ export default function Login() {
           </p>
         </div>
         <div className="text-xs text-secondary-foreground/50 font-mono">
-          growthlens.ai &copy; 2026
+          lensgrowth.ai &copy; 2026
         </div>
       </div>
       <div className="flex items-center justify-center p-6 md:p-10">

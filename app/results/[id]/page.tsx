@@ -697,7 +697,7 @@ export default function Results() {
     const wrap = {
       chatgpt: `I'm auditing my website ${scan.target}. Please help me implement these prioritized conversion fixes in a modern React + Tailwind stack. For each fix, produce the exact JSX/CSS change and explain the tradeoff.\n\n${fixes}`,
       claude: `<task>Implement these website conversion fixes for ${scan.target} using React + Tailwind. Return a plan and code for each.</task>\n\n<issues>\n${fixes}\n</issues>`,
-      cursor: `# ${scan.target} &ndash; GrowthLens fixes\n\nApply these fixes to the current file. Prefer Tailwind + shadcn/ui.\n\n${fixes}`,
+      cursor: `# ${scan.target} &ndash; LensGrowth fixes\n\nApply these fixes to the current file. Prefer Tailwind + shadcn/ui.\n\n${fixes}`,
     }[tool];
     copy(wrap);
     toast.success(`Copied prompt for ${tool}`);

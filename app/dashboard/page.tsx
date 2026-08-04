@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { useTheme } from "@/lib/theme";
 import Shell from "@/components/Shell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -95,7 +94,7 @@ const Delta = ({ value }: { value?: number }) => {
 // ---------- AI Assistant Widget ----------
 function AIAssistantWidget() {
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Hi! I'm your GrowthLens AI Assistant. Ask me anything about your scans, growth strategy, or what to fix first." },
+    { role: "assistant", text: "Hi! I'm your LensGrowth AI Assistant. Ask me anything about your scans, growth strategy, or what to fix first." },
   ]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -289,7 +288,7 @@ export default function Dashboard() {
             </Link>
             <Link href="/scan/new">
               <Button className="gap-2 text-xs" data-testid="dashboard-new-scan-btn">
-                <Plus className="w-4 h-4" />New Audit
+                <Plus className="w-4 h-4" />New Scan
               </Button>
             </Link>
           </div>

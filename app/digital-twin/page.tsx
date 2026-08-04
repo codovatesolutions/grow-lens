@@ -17,7 +17,7 @@ export default function DigitalTwinPage() {
   const [profile, setProfile] = useState<any>({
     brand_voice: "Professional, direct, and value-oriented",
     target_audience: "B2B Founders, marketing leads, and growth agencies",
-    products_json: ["GrowthLens OS", "AI Audit Suite"],
+    products_json: ["LensGrowth OS", "AI Audit Suite"],
     pricing_model: "$49/mo SaaS Freemium",
     memory_context: "Focusing on scaling conversion optimization and security header compliance.",
   });

@@ -87,7 +87,7 @@ export default function LeadsPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `growthlens_leads_${Date.now()}.csv`);
+    link.setAttribute("download", `lensgrowth_leads_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

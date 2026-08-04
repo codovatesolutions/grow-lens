@@ -27,7 +27,7 @@ app.use(cors({
 }));
 
 // ============ PROMPTS & SCHEMAS ============
-const BUSINESS_SYS = `You are GrowthLens AI, a senior conversion-rate optimization analyst.
+const BUSINESS_SYS = `You are LensGrowth AI, a senior conversion-rate optimization analyst.
 You analyze a public business website and output strictly valid JSON. Use plain English,
 specific to the site content provided. Never invent facts not present in the data.
 
@@ -117,7 +117,7 @@ INDUSTRY HINT (may be 'auto' or empty): {industry}
 WEBSITE DATA:
 {data}`;
 
-const CREATOR_SYS = `You are GrowthLens AI, a creator-economy growth strategist.
+const CREATOR_SYS = `You are LensGrowth AI, a creator-economy growth strategist.
 You analyze public social profile links and output strictly valid JSON. Use plain
 English and concrete examples. Do not claim private platform access; reason from the URLs
 and any provided notes.
@@ -200,7 +200,7 @@ MINE (already-scored site):
 COMPETITOR (raw scraped data):
 {comp}`;
 
-const CEO_SYS = `You are the CEO AI — the head of GrowthLens's AI Growth Team.
+const CEO_SYS = `You are the CEO AI — the head of LensGrowth's AI Growth Team.
 You have received opinions from 13 specialist experts (UX, SEO, Brand, Copywriter,
 Sales, Marketing, Consumer Psychology, Pricing, Accessibility, Analytics, Performance,
 Growth Hacker, Competitor Analyst). Your job is to synthesize their input into a
@@ -277,7 +277,7 @@ async function scrapeWebsite(targetUrl: string) {
     const response = await axios.get(url, {
       timeout: 12000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; GrowthLensBot/1.0)',
+        'User-Agent': 'Mozilla/5.0 (compatible; LensGrowthBot/1.0)',
       },
     });
     const html = response.data;
@@ -918,11 +918,11 @@ api.get('/public/scans/:id/badge.svg', async (req: Request, res: Response) => {
     }
     const score = result.rows[0].score || 0;
     const color = score >= 75 ? '#047857' : score >= 50 ? '#eab308' : '#dc2626';
-    const label = 'GrowthLens Score';
+    const label = 'LensGrowth Score';
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="220" height="56" viewBox="0 0 220 56">
   <rect width="220" height="56" rx="8" fill="#0a0a0a"/>
   <rect x="0" y="0" width="150" height="56" rx="8" fill="#111"/>
-  <text x="18" y="22" font-family="ui-sans-serif,system-ui" font-size="10" fill="#a1a1aa" letter-spacing="2">GROWTHLENS</text>
+  <text x="18" y="22" font-family="ui-sans-serif,system-ui" font-size="10" fill="#a1a1aa" letter-spacing="2">LENSGROWTH</text>
   <text x="18" y="42" font-family="ui-sans-serif,system-ui" font-size="14" font-weight="600" fill="#f8fafc">${label}</text>
   <rect x="150" y="0" width="70" height="56" fill="${color}" rx="8"/>
   <rect x="150" y="0" width="10" height="56" fill="${color}"/>
@@ -1247,7 +1247,7 @@ api.get('/dashboard', currentUser as any, async (req: AuthenticatedRequest, res:
   }
 });
 
-const ASSISTANT_SYS = `You are the GrowthLens AI Assistant — a helpful growth consultant.
+const ASSISTANT_SYS = `You are the LensGrowth AI Assistant — a helpful growth consultant.
 You have access to the user's recent scan summaries. Answer their questions concisely
 (2-4 short paragraphs max, use plain English, no jargon). If they ask about a specific
 scan you don't have context on, ask them to share the URL or scan ID. Never invent scan
@@ -1668,7 +1668,7 @@ api.post('/scans/:id/simulate', currentUser as any, async (req: AuthenticatedReq
     if (scanRes.rows.length === 0) return res.status(404).json({ detail: 'Scan not found' });
     const scan = scanRes.rows[0];
 
-    const sys = `You are GrowthLens Financial & Conversion Simulator. Predict exact conversion lift and revenue impact for proposed website changes. Output strictly valid JSON.`;
+    const sys = `You are LensGrowth Financial & Conversion Simulator. Predict exact conversion lift and revenue impact for proposed website changes. Output strictly valid JSON.`;
     const prompt = `Simulate scenario "${scenario || 'Fix primary CTA, add trust badges, and optimize headline'}" for ${scan.target} (Current score: ${scan.score}/100).
 JSON Schema:
 {
@@ -1713,7 +1713,7 @@ api.get('/war-room', currentUser as any, async (req: AuthenticatedRequest, res: 
 api.post('/war-room/strategy', currentUser as any, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { targets } = req.body;
-    const sys = `You are GrowthLens Chief War Room Strategist. Create a winning competitive counter-strategy against competitors. Output strictly valid JSON.`;
+    const sys = `You are LensGrowth Chief War Room Strategist. Create a winning competitive counter-strategy against competitors. Output strictly valid JSON.`;
     const prompt = `Generate a competitive war room breakdown for targets: ${JSON.stringify(targets || ['my-site.com', 'competitor.com'])}.
 JSON Schema:
 {
@@ -1803,7 +1803,7 @@ app.use(api);
   try {
     await initDb();
     app.listen(PORT, () => {
-      console.log(`GrowthLens Express Backend listening on port ${PORT}`);
+      console.log(`LensGrowth Express Backend listening on port ${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);
