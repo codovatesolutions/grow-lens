@@ -11,6 +11,8 @@ import { OAuth2Client } from 'google-auth-library';
 
 import { pool, initDb } from './db';
 import { llmJson, llmText } from './llm';
+import socialRouter from './social/social.routes';
+import { startScheduler } from './social/scheduler';
 
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
@@ -1843,10 +1845,14 @@ api.get('/copilot/brief', currentUser as any, async (req: AuthenticatedRequest, 
 
 app.use(api);
 
+// ── Social Media Publisher module ────────────────────────────
+app.use('/api/social', socialRouter);
+
 // Startup Initialization
 (async () => {
   try {
     await initDb();
+    startScheduler(); // Start PostgreSQL-backed job scheduler
     app.listen(PORT, () => {
       console.log(`LensGrowth Express Backend listening on port ${PORT}`);
     });

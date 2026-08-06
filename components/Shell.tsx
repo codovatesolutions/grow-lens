@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Plus, Users, Sparkles, CalendarDays, FileText,
   Settings, CreditCard, LogOut, Telescope, Menu, X,
-  Brain, Swords, Trophy, Store
+  Brain, Swords, Trophy, Store, Share2
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -20,8 +20,9 @@ const items = [
   { href: "/scan/new", label: "New Scan", icon: Plus, tid: "nav-new-scan" },
   { href: "/leads", label: "Lead List", icon: Users, tid: "nav-leads" },
   { href: "/creator", label: "Creator Insights", icon: Sparkles, tid: "nav-creator" },
-  { href: "/planner", label: "Content Planner", icon: CalendarDays, tid: "nav-planner" },
-  { href: "/reports", label: "Reports", icon: FileText, tid: "nav-reports" },
+  { href: "/planner",  label: "Content Planner",   icon: CalendarDays, tid: "nav-planner" },
+  { href: "/social",   label: "Social Publisher",  icon: Share2,       tid: "nav-social" },
+  { href: "/reports",  label: "Reports",           icon: FileText,     tid: "nav-reports" },
   { href: "/settings", label: "Settings", icon: Settings, tid: "nav-settings" },
   { href: "/billing", label: "Billing", icon: CreditCard, tid: "nav-billing" },
 ];
