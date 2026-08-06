@@ -1,12 +1,18 @@
 import { MetadataRoute } from "next";
+import { headers } from "next/headers";
 
 export default function robots(): MetadataRoute.Robots {
+  const headersList = headers();
+  const host = headersList.get("host") || "lensgrowth.com";
+  const proto = headersList.get("x-forwarded-proto") || "https";
+  const baseUrl = `${proto}://${host}`;
+
   return {
     rules: {
       userAgent: "*",
       allow: "/",
       disallow: ["/api/", "/_next/"],
     },
-    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://lensgrowth.com")}/sitemap.xml`,
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
