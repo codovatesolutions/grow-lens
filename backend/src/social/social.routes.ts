@@ -24,7 +24,10 @@ function requireAuth(req: Request & { user?: any }, res: Response, next: any) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith('Bearer ')) return res.status(401).json({ error: 'Unauthorized' });
   try {
-    req.user = jwt.verify(auth.split(' ')[1], JWT_SECRET);
+    const decoded = jwt.verify(auth.split(' ')[1], JWT_SECRET) as any;
+    const userId = decoded.id || decoded.sub;
+    if (!userId) return res.status(401).json({ error: 'Invalid token payload' });
+    req.user = { id: userId, ...decoded };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });

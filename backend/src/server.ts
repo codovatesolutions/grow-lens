@@ -553,7 +553,7 @@ api.post('/auth/register', async (req: Request, res: Response) => {
       [id, email.toLowerCase(), name, role || 'business', hash, now]
     );
 
-    const token = jwt.sign({ sub: id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id, sub: id }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       token,
       user: { id, email: email.toLowerCase(), name, role: role || 'business', created_at: now.toISOString() },
@@ -577,7 +577,7 @@ api.post('/auth/login', async (req: Request, res: Response) => {
       return res.status(401).json({ detail: 'Invalid credentials' });
     }
 
-    const token = jwt.sign({ sub: user.id }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: user.id, sub: user.id }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       token,
       user: {
@@ -648,7 +648,7 @@ api.post('/auth/google', async (req: Request, res: Response) => {
     const userName = u.name || name || email;
     const createdAt = u.created_at;
 
-    const token = jwt.sign({ sub: userId }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: userId, sub: userId }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       token,
       user: {
@@ -669,7 +669,7 @@ api.post('/auth/google', async (req: Request, res: Response) => {
 api.post('/auth/guest', async (_req: Request, res: Response) => {
   try {
     const guest = await createGuestUser();
-    const token = jwt.sign({ sub: guest.id }, JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: guest.id, sub: guest.id }, JWT_SECRET, { expiresIn: '30d' });
     return res.json({ token, user: guest });
   } catch (err: any) {
     return res.status(500).json({ detail: err.message });
