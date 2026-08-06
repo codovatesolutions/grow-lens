@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Shell from "@/components/Shell";
 import ScoreRing from "@/components/ScoreRing";
+import Logo from "@/components/brand/Logo";
 import { toast } from "sonner";
 
 const SUBSCORE_KEYS = [
@@ -142,9 +143,9 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
                   <Progress value={growthTeam.executive_summary.board_confidence} className="h-1.5" />
                 </Card>
                 <Card className="p-4 space-y-2 bg-card">
-                  <span className="text-xs uppercase font-mono font-bold text-muted-foreground">Estimated Revenue Leak</span>
-                  <div className="font-display text-2xl font-black text-red-500">
-                    ${(growthTeam.revenue_leak?.monthly_revenue_lost_usd ?? 1750).toLocaleString()} <span className="text-xs font-normal text-muted-foreground">/mo</span>
+                  <span className="text-xs uppercase font-mono font-bold text-muted-foreground">Estimated Score Lift</span>
+                  <div className="font-display text-2xl font-black text-emerald-500">
+                    +24 Points
                   </div>
                 </Card>
               </div>
@@ -229,9 +230,9 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div>
               <h3 className="font-display text-lg font-bold flex items-center gap-2 text-emerald-600">
-                <TrendingUp className="w-5 h-5" /> Growth Simulator & Revenue Forecaster
+                <TrendingUp className="w-5 h-5" /> Growth & Conversion Simulator
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">Test &ldquo;what-if&rdquo; scenarios to forecast conversion lifts and monthly revenue gains.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Test &ldquo;what-if&rdquo; scenarios to forecast conversion lifts and user engagement.</p>
             </div>
             <Badge className="bg-emerald-600 text-white font-mono text-xs px-3 py-1">
               +18.5% Conversion Forecast
@@ -250,9 +251,9 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
               <p className="text-[11px] text-muted-foreground">Additional qualified leads per month</p>
             </Card>
             <Card className="p-5 space-y-2 text-center bg-card">
-              <span className="text-xs uppercase font-bold text-muted-foreground">Est. Monthly Revenue Impact</span>
-              <div className="font-display text-3xl font-black text-emerald-600">+$1,750 / mo</div>
-              <p className="text-[11px] text-muted-foreground">Direct recurring revenue increase</p>
+              <span className="text-xs uppercase font-bold text-muted-foreground">Est. Overall Score Impact</span>
+              <div className="font-display text-3xl font-black text-emerald-600">+22 Points</div>
+              <p className="text-[11px] text-muted-foreground">Direct audit score increase after fixes</p>
             </Card>
           </div>
         </Card>
@@ -457,14 +458,12 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
                 <div className="text-xs text-muted-foreground">Risk if not fixed: {growthTeam.executive_summary.biggest_risk}</div>
               </Card>
 
-              {/* Revenue Leak Overview */}
-              {growthTeam.revenue_leak && (
-                <Card className="p-5 border-red-500/20 bg-gradient-to-br from-red-500/5 to-transparent">
-                  <div className="text-xs uppercase tracking-widest text-red-600 font-bold mb-2">Estimated Revenue Leak</div>
-                  <div className="font-display text-2xl font-black text-red-600">${(growthTeam.revenue_leak.monthly_revenue_lost_usd ?? 0).toLocaleString()} /mo</div>
-                  <div className="text-xs text-muted-foreground mt-1">Lead loss: {growthTeam.revenue_leak.lead_loss_pct}% &bull; Bounce: {growthTeam.revenue_leak.bounce_increase_pct}%</div>
-                </Card>
-              )}
+              {/* Conversion Lift Overview */}
+              <Card className="p-5 border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent">
+                <div className="text-xs uppercase tracking-widest text-emerald-600 font-bold mb-2">Estimated Conversion Lift</div>
+                <div className="font-display text-2xl font-black text-emerald-600">+18.5%</div>
+                <div className="text-xs text-muted-foreground mt-1">Optimization focus: Trust, UX & Call-to-action clarity</div>
+              </Card>
             </div>
 
             {/* Specialist grid */}
@@ -706,8 +705,12 @@ export default function Results() {
   if (loading) {
     return (
       <Shell>
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-40 w-full" />
+        <div className="max-w-6xl mx-auto space-y-6 flex flex-col items-center justify-center py-20">
+          <Logo size="lg" loading showSubtitle />
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4">
+            <Loader2 className="w-4 h-4 animate-spin text-primary" />
+            <span>Loading audit results & recommendations...</span>
+          </div>
         </div>
       </Shell>
     );

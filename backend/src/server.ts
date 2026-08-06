@@ -471,10 +471,36 @@ export interface AuthenticatedRequest extends Request {
   };
 }
 
+async function createGuestUser(): Promise<{ id: string; email: string; name: string; role: string; created_at: string }> {
+  const id = uuidv4();
+  const guestEmail = `guest_${id.substring(0, 8)}@lensgrowth.internal`;
+  const now = new Date();
+  const hash = bcrypt.hashSync(uuidv4(), 10);
+
+  await pool.query(
+    'INSERT INTO users (id, email, name, role, password_hash, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
+    [id, guestEmail, 'Guest User', 'business', hash, now]
+  );
+
+  return {
+    id,
+    email: guestEmail,
+    name: 'Guest User',
+    role: 'business',
+    created_at: now.toISOString(),
+  };
+}
+
 async function currentUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ detail: 'Missing token' });
+    try {
+      const guest = await createGuestUser();
+      req.user = guest;
+      return next();
+    } catch (err) {
+      return res.status(401).json({ detail: 'Missing token' });
+    }
   }
 
   const token = authHeader.split(' ')[1];
@@ -482,7 +508,9 @@ async function currentUser(req: AuthenticatedRequest, res: Response, next: NextF
     const payload = jwt.verify(token, JWT_SECRET) as { sub: string };
     const result = await pool.query('SELECT id, email, name, role, created_at FROM users WHERE id = $1', [payload.sub]);
     if (result.rows.length === 0) {
-      return res.status(401).json({ detail: 'User not found' });
+      const guest = await createGuestUser();
+      req.user = guest;
+      return next();
     }
     const user = result.rows[0];
     req.user = {
@@ -491,7 +519,13 @@ async function currentUser(req: AuthenticatedRequest, res: Response, next: NextF
     };
     next();
   } catch (err) {
-    return res.status(401).json({ detail: 'Invalid token' });
+    try {
+      const guest = await createGuestUser();
+      req.user = guest;
+      return next();
+    } catch {
+      return res.status(401).json({ detail: 'Invalid token' });
+    }
   }
 }
 
@@ -626,6 +660,17 @@ api.post('/auth/google', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error('Google auth error:', err);
     return res.status(401).json({ detail: 'Google authentication failed' });
+  }
+});
+
+// Guest Session Auth
+api.post('/auth/guest', async (_req: Request, res: Response) => {
+  try {
+    const guest = await createGuestUser();
+    const token = jwt.sign({ sub: guest.id }, JWT_SECRET, { expiresIn: '30d' });
+    return res.json({ token, user: guest });
+  } catch (err: any) {
+    return res.status(500).json({ detail: err.message });
   }
 });
 

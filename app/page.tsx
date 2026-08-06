@@ -66,13 +66,15 @@ export default function Landing() {
         <div className="hero-glow" />
         <div className="max-w-7xl mx-auto px-6 py-20 md:py-28 grid md:grid-cols-12 gap-10 relative z-10">
           <div className="md:col-span-7">
-            <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-6">AI-powered growth analyst</div>
+            <div className="text-xs uppercase tracking-[0.25em] text-primary mb-6 font-semibold">AI-powered growth agency</div>
             <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-black leading-[1.05] tracking-tighter">
-              See exactly what's
-              <span className="text-primary"> holding back </span>
-              your website or social profile.
+              Digital Marketing Agency That Delivers
+              <span className="text-primary"> Business Growth </span>
             </h1>
-            <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-2xl leading-relaxed">
+            <h2 className="mt-6 text-xl md:text-2xl text-foreground font-semibold leading-relaxed">
+              Grow Faster With SEO, Google Ads, AI Marketing & Lead Generation
+            </h2>
+            <p className="mt-4 text-base text-muted-foreground max-w-2xl leading-relaxed">
               Paste a URL or a social link. LensGrowth AI reads it, scores it 0&ndash;100, and tells you in plain English what to fix, what to post, and how to win the next 30 days.
             </p>
             <div className="mt-8 flex wrap gap-3">
@@ -173,6 +175,88 @@ export default function Landing() {
             <Stat k="Avg score lift" v="+18 pts" />
             <Stat k="Hours saved / scan" v="6.4" />
             <Stat k="Email open rate" v="42%" />
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Directories for Internal Linking */}
+      <section className="border-b border-border bg-card/10">
+        <div className="max-w-7xl mx-auto px-6 py-20">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-3xl md:text-4xl font-bold tracking-tight">Explore Our Growth Networks</h2>
+            <p className="text-muted-foreground mt-3">Targeted expertise across services, business verticals, and regional locations.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            {/* Services Column */}
+            <div>
+              <h3 className="font-display text-xl font-bold mb-6 border-b border-border pb-3 text-primary">SEO Services</h3>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { name: "SEO Services", slug: "seo" },
+                  { name: "Google Ads", slug: "google-ads" },
+                  { name: "Meta Ads", slug: "meta-ads" },
+                  { name: "Website Development", slug: "website-development" },
+                  { name: "Lead Generation", slug: "lead-generation" },
+                  { name: "AI Marketing", slug: "ai-marketing" },
+                  { name: "Branding", slug: "branding" }
+                ].map(item => (
+                  <li key={item.slug}>
+                    <Link href={`/services/${item.slug}`} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                      <ArrowRight className="w-3 h-3 text-primary" /> {item.name}
+                    </Link>
+                  </li>
+                ))}
+                <li className="pt-2">
+                  <Link href="/services" className="text-primary hover:underline text-xs font-semibold">View All Services →</Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Industries Column */}
+            <div>
+              <h3 className="font-display text-xl font-bold mb-6 border-b border-border pb-3 text-primary">Marketing for Verticals</h3>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { name: "Marketing for Hospitals", slug: "hospitals" },
+                  { name: "Marketing for Schools", slug: "startups" }, // maps to startups content template
+                  { name: "Marketing for Restaurants", slug: "restaurants" },
+                  { name: "Marketing for Real Estate", slug: "real-estate" },
+                  { name: "Marketing for Startups", slug: "startups" }
+                ].map(item => (
+                  <li key={item.name}>
+                    <Link href={`/industries/${item.slug}`} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                      <ArrowRight className="w-3 h-3 text-primary" /> {item.name}
+                    </Link>
+                  </li>
+                ))}
+                <li className="pt-2">
+                  <Link href="/industries" className="text-primary hover:underline text-xs font-semibold">View All Industries →</Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Locations Column */}
+            <div>
+              <h3 className="font-display text-xl font-bold mb-6 border-b border-border pb-3 text-primary">Serving Cities</h3>
+              <ul className="space-y-3 text-sm">
+                {[
+                  { name: "Serving Bangalore", slug: "bangalore" },
+                  { name: "Hyderabad", slug: "hyderabad" },
+                  { name: "Mysore", slug: "mysore" },
+                  { name: "Chennai", slug: "chennai" }
+                ].map(item => (
+                  <li key={item.slug}>
+                    <Link href={`/locations/${item.slug}`} className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+                      <ArrowRight className="w-3 h-3 text-primary" /> {item.name}
+                    </Link>
+                  </li>
+                ))}
+                <li className="pt-2">
+                  <Link href="/locations" className="text-primary hover:underline text-xs font-semibold">View All Cities →</Link>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </section>

@@ -53,7 +53,7 @@ export default function MissionsPage() {
               <Trophy className="w-6 h-6 text-primary" /> Growth Missions & Gamified Milestones
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Gamified weekly action items. Complete missions to increase scores and unlock revenue impact.
+              Gamified weekly action items. Complete missions to increase scores and boost site conversion.
             </p>
           </div>
           <Badge variant="outline" className="font-mono text-sm px-3 py-1.5 border-emerald-500/40 bg-emerald-500/10 text-emerald-600">
@@ -73,8 +73,8 @@ export default function MissionsPage() {
             <div className="font-display text-2xl font-black text-primary">+{totalScoreReward} Points</div>
           </Card>
           <Card className="p-5 space-y-2 col-span-2 md:col-span-1">
-            <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Revenue Unlocked</div>
-            <div className="font-display text-2xl font-black text-emerald-600">${totalDollarImpact.toLocaleString()} / mo</div>
+            <div className="text-xs uppercase font-bold tracking-wider text-muted-foreground">Conversion Lift</div>
+            <div className="font-display text-2xl font-black text-emerald-600">+{(completedCount * 3.5).toFixed(1)}% Estimated Lift</div>
           </Card>
         </div>
 
@@ -102,9 +102,6 @@ export default function MissionsPage() {
                       </Badge>
                       <Badge className="bg-primary/10 text-primary font-mono text-[11px] border border-primary/20">
                         +{m.reward_score} Score Lift
-                      </Badge>
-                      <Badge variant="secondary" className="font-mono text-[11px]">
-                        +${m.impact_usd}/mo Impact
                       </Badge>
                     </div>
                     <h3 className={`font-display text-base font-bold ${m.done ? "line-through" : ""}`}>

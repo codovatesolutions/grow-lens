@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import Shell from "@/components/Shell";
+import Logo from "@/components/brand/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -236,7 +237,10 @@ export default function Dashboard() {
     return (
       <Shell>
         <div className="space-y-6 max-w-7xl mx-auto">
-          <Skeleton className="h-10 w-64" />
+          <div className="flex items-center justify-between pb-4 border-b border-border">
+            <Logo size="lg" loading showSubtitle />
+            <Skeleton className="h-9 w-32" />
+          </div>
           <div className="grid grid-cols-12 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className={`col-span-12 md:col-span-6 lg:col-span-${i === 0 ? 4 : i < 3 ? 4 : 3}`}>
@@ -294,43 +298,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Growth OS Revenue Opportunity Banner */}
-        <Card className="p-5 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-card to-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="space-y-1">
-            <div className="text-xs font-mono uppercase tracking-widest font-bold text-emerald-600">
-              Live Revenue Forecast Opportunity
-            </div>
-            <div className="font-display text-2xl font-black text-foreground">
-              +$12,450 <span className="text-sm font-semibold text-muted-foreground">/ month potential revenue unlock</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Calculated across your website conversion friction, missing security headers, and CTA drop-offs.
-            </p>
-          </div>
-          <Link href="/missions">
-            <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 font-semibold">
-              Unlock Revenue Missions &rarr;
-            </Button>
-          </Link>
-        </Card>
 
         {/* Widget grid */}
         <div className="grid grid-cols-12 gap-4">
-          {/* Row 1: Revenue Score + Growth Score + AI Assistant (spans 2 rows) */}
-          <Widget title="Revenue Score" icon={DollarSign} tid="widget-revenue-score" className="col-span-12 sm:col-span-6 lg:col-span-4">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-              <ScoreGauge value={revenue_score} />
-              <div className="flex-1 text-center sm:text-left">
-                <div className="text-xs text-muted-foreground">Economic-impact index derived from your business scans.</div>
-                <div className="mt-2 flex items-center justify-center sm:justify-start gap-2 text-xs">
-                  <span className="text-muted-foreground">vs last week</span>
-                  <Delta value={weekly?.delta} />
-                </div>
-              </div>
-            </div>
-          </Widget>
-
-          <Widget title="Growth Score" icon={TrendingUp} tid="widget-growth-score" className="col-span-12 sm:col-span-6 lg:col-span-4">
+          {/* Row 1: Growth Score + AI Assistant (spans 2 rows) */}
+          <Widget title="Growth Score" icon={TrendingUp} tid="widget-growth-score" className="col-span-12 lg:col-span-8">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <ScoreGauge value={growth_score} />
               <div className="flex-1 text-center sm:text-left">

@@ -38,7 +38,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card">
         <div className="px-6 py-5 border-b border-border">
           <div className="flex items-center gap-2">
-            <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" className="w-7 h-7 rounded-md object-cover border border-border" />
+            <img src="/logolensgrowth.jpeg" alt="LensGrowth Logo" loading="eager" className="w-7 h-7 rounded-md object-cover border border-border" />
             <span className="font-display text-lg font-bold tracking-tight">LensGrowth<span className="text-primary">.</span></span>
           </div>
           <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1 pl-9">by Codovate Solutions</div>
