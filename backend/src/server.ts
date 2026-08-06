@@ -1846,7 +1846,7 @@ api.get('/copilot/brief', currentUser as any, async (req: AuthenticatedRequest, 
 app.use(api);
 
 // ── Social Media Publisher module ────────────────────────────
-app.use('/api/social', socialRouter);
+app.use('/social', socialRouter);
 
 // Startup Initialization
 (async () => {
