@@ -348,6 +348,17 @@ async function scrapeWebsite(targetUrl: string) {
     const has_terms = internal_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition')) ||
       buttons_or_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition'));
 
+    // Check Set-Cookie headers for insecure flags
+    const setCookie = headers['set-cookie'];
+    let has_insecure_cookies = false;
+    if (setCookie) {
+      const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+      has_insecure_cookies = cookies.some(c => {
+        const lower = c.toLowerCase();
+        return !lower.includes('httponly') || !lower.includes('secure');
+      });
+    }
+
     const security = {
       has_https: url.startsWith('https://'),
       has_csp: !!(headers['content-security-policy'] || headers['csp']),
@@ -355,6 +366,13 @@ async function scrapeWebsite(targetUrl: string) {
       has_xfo: !!headers['x-frame-options'],
       has_xcto: !!headers['x-content-type-options'],
       has_referrer_policy: !!headers['referrer-policy'],
+      has_permissions_policy: !!(headers['permissions-policy'] || headers['feature-policy']),
+      has_coop: !!headers['cross-origin-opener-policy'],
+      has_coep: !!headers['cross-origin-embedder-policy'],
+      exposed_powered_by: headers['x-powered-by'] || null,
+      exposed_server: headers['server'] || null,
+      wildcard_cors: headers['access-control-allow-origin'] === '*',
+      has_insecure_cookies,
       has_privacy_policy,
       has_terms,
       exposed_emails_count: emails_found.length,
@@ -431,6 +449,51 @@ function generateSecurityVulnerabilities(sec: any) {
       category: 'headers'
     });
   }
+  if (!sec.has_referrer_policy) {
+    vulnerabilities.push({
+      title: 'Missing Referrer-Policy Header',
+      severity: 'info',
+      impact: 'Leaks full URL paths to external third-party sites when users click outbound links.',
+      solution: 'Add header: Referrer-Policy: strict-origin-when-cross-origin',
+      category: 'headers'
+    });
+  }
+  if (!sec.has_permissions_policy) {
+    vulnerabilities.push({
+      title: 'Missing Permissions-Policy Header',
+      severity: 'info',
+      impact: 'Hardware and browser features (camera, microphone, geolocation) remain unrestricted.',
+      solution: 'Add header: Permissions-Policy: camera=(), microphone=(), geolocation=()',
+      category: 'headers'
+    });
+  }
+  if (!sec.has_coop) {
+    vulnerabilities.push({
+      title: 'Missing Cross-Origin-Opener-Policy (COOP)',
+      severity: 'info',
+      impact: 'Browsing context can be accessed by cross-origin popups, risking cross-window attacks.',
+      solution: 'Add header: Cross-Origin-Opener-Policy: same-origin',
+      category: 'headers'
+    });
+  }
+  if (sec.exposed_powered_by) {
+    vulnerabilities.push({
+      title: `Exposed X-Powered-By Header (${sec.exposed_powered_by})`,
+      severity: 'info',
+      impact: 'Discloses underlying framework technology to potential reconnaissance tools.',
+      solution: 'Disable the X-Powered-By header in your web server or Express configuration.',
+      category: 'meta'
+    });
+  }
+  if (sec.exposed_server) {
+    vulnerabilities.push({
+      title: `Exposed Server Header (${sec.exposed_server})`,
+      severity: 'info',
+      impact: 'Reveals server software details, enabling targeted version vulnerability searches.',
+      solution: 'Configure server (e.g. NGINX/Apache) to hide detailed Server tokens.',
+      category: 'meta'
+    });
+  }
   if (sec.exposed_emails_count > 0) {
     vulnerabilities.push({
       title: `Exposed Plaintext Emails (${sec.exposed_emails_count} found)`,
@@ -456,6 +519,24 @@ function generateSecurityVulnerabilities(sec: any) {
       impact: 'Lacks explicit legal agreement for service usage and liability boundaries.',
       solution: 'Add a Terms of Service link in the page footer.',
       category: 'privacy'
+    });
+  }
+  if (sec.wildcard_cors) {
+    vulnerabilities.push({
+      title: 'Permissive Wildcard CORS Access (*)',
+      severity: 'warning',
+      impact: 'Allows any origin to query resource endpoints via AJAX, which can leak user data if credentials or context are mishandled.',
+      solution: 'Configure Access-Control-Allow-Origin to specific trusted domains instead of a wildcard (*).',
+      category: 'headers'
+    });
+  }
+  if (sec.has_insecure_cookies) {
+    vulnerabilities.push({
+      title: 'Insecure Session or Config Cookies',
+      severity: 'warning',
+      impact: 'Cookies are sent without HttpOnly or Secure flags, exposing them to cross-site scripting (XSS) extraction or transmission over unencrypted channels.',
+      solution: 'Set "Secure" and "HttpOnly" directives in all cookie creation headers.',
+      category: 'cookies'
     });
   }
 
