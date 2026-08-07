@@ -105,6 +105,12 @@ export const socialApi = {
   getOAuthUrl: (platform: Platform): Promise<{ authUrl: string }> =>
     api.get(`/social/oauth-url/${platform}`).then(r => r.data),
 
+  connectDemo: (platform: Platform): Promise<{ success: boolean; accountName: string }> =>
+    api.post(`/social/connect-demo/${platform}`).then(r => r.data),
+
+  connectAllDemo: (): Promise<{ success: boolean }> =>
+    api.post('/social/connect-all-demo').then(r => r.data),
+
   disconnect: (platform: Platform): Promise<void> =>
     api.delete(`/social/disconnect/${platform}`).then(r => r.data),
 

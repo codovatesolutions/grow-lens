@@ -103,6 +103,68 @@ router.get('/callback/:platform', async (req, res) => {
   }
 });
 
+/** POST /api/social/connect-demo/:platform */
+router.post('/connect-demo/:platform', requireAuth, async (req: any, res) => {
+  try {
+    const platform = req.params.platform as Platform;
+    if (!ALL_PLATFORMS.includes(platform)) return res.status(400).json({ error: 'Unknown platform' });
+
+    const demoProfiles: Record<Platform, { name: string; avatar: string }> = {
+      facebook:  { name: 'LensGrowth Official Page', avatar: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=150&auto=format&fit=crop&q=80' },
+      instagram: { name: '@lensgrowth_official',    avatar: 'https://images.unsplash.com/photo-1611262588024-d12430b98920?w=150&auto=format&fit=crop&q=80' },
+      linkedin:  { name: 'LensGrowth Technologies',  avatar: 'https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=150&auto=format&fit=crop&q=80' },
+      twitter:   { name: '@LensGrowthAI',          avatar: 'https://images.unsplash.com/photo-1611605698335-8b1569810432?w=150&auto=format&fit=crop&q=80' },
+      pinterest: { name: 'LensGrowth Design',       avatar: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=150&auto=format&fit=crop&q=80' },
+      tiktok:    { name: '@lensgrowth_tok',         avatar: 'https://images.unsplash.com/photo-1611605698323-b1e992d3777f?w=150&auto=format&fit=crop&q=80' },
+      youtube:   { name: 'LensGrowth Channel',       avatar: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=150&auto=format&fit=crop&q=80' },
+    };
+
+    const profile = demoProfiles[platform];
+    const tokenData = {
+      accessToken: `demo_access_token_${platform}_${Date.now()}`,
+      accountName: profile.name,
+      accountId:   `demo_${platform}_id`,
+      avatarUrl:   profile.avatar,
+      expiresAt:   new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    };
+
+    await saveAccount(req.user.id, platform, tokenData);
+    res.json({ success: true, accountName: profile.name, platform });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** POST /api/social/connect-all-demo */
+router.post('/connect-all-demo', requireAuth, async (req: any, res) => {
+  try {
+    const demoProfiles: Record<Platform, { name: string; avatar: string }> = {
+      facebook:  { name: 'LensGrowth Official Page', avatar: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=150&auto=format&fit=crop&q=80' },
+      instagram: { name: '@lensgrowth_official',    avatar: 'https://images.unsplash.com/photo-1611262588024-d12430b98920?w=150&auto=format&fit=crop&q=80' },
+      linkedin:  { name: 'LensGrowth Technologies',  avatar: 'https://images.unsplash.com/photo-1611944212129-29977ae1398c?w=150&auto=format&fit=crop&q=80' },
+      twitter:   { name: '@LensGrowthAI',          avatar: 'https://images.unsplash.com/photo-1611605698335-8b1569810432?w=150&auto=format&fit=crop&q=80' },
+      pinterest: { name: 'LensGrowth Design',       avatar: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=150&auto=format&fit=crop&q=80' },
+      tiktok:    { name: '@lensgrowth_tok',         avatar: 'https://images.unsplash.com/photo-1611605698323-b1e992d3777f?w=150&auto=format&fit=crop&q=80' },
+      youtube:   { name: 'LensGrowth Channel',       avatar: 'https://images.unsplash.com/photo-1611162618071-b39a2ec055fb?w=150&auto=format&fit=crop&q=80' },
+    };
+
+    for (const platform of ALL_PLATFORMS) {
+      const profile = demoProfiles[platform];
+      await saveAccount(req.user.id, platform, {
+        accessToken: `demo_token_${platform}`,
+        accountName: profile.name,
+        accountId:   `demo_${platform}_id`,
+        avatarUrl:   profile.avatar,
+        expiresAt:   new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+      });
+    }
+
+    res.json({ success: true, message: 'All demo accounts connected' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 /** DELETE /api/social/disconnect/:platform */
 router.delete('/disconnect/:platform', requireAuth, async (req: any, res) => {
   try {
