@@ -59,32 +59,6 @@ export default function ConnectedAccounts() {
     }
   };
 
-  const handleConnectDemo = async (platform: Platform) => {
-    try {
-      setConnecting(platform);
-      await socialApi.connectDemo(platform);
-      await fetchAccounts();
-      toast.success(`${PLATFORM_CONFIG[platform].name} connected via demo`);
-    } catch {
-      toast.error("Failed to connect demo");
-    } finally {
-      setConnecting(null);
-    }
-  };
-
-  const handleConnectAllDemo = async () => {
-    try {
-      setLoading(true);
-      await socialApi.connectAllDemo();
-      await fetchAccounts();
-      toast.success("⚡ All platforms connected in demo mode!");
-    } catch {
-      toast.error("Failed to connect demo accounts");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDisconnect = async (platform: Platform) => {
     try {
       await socialApi.disconnect(platform);
@@ -100,7 +74,7 @@ export default function ConnectedAccounts() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-foreground">Connected Accounts</h2>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -108,16 +82,6 @@ export default function ConnectedAccounts() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleConnectAllDemo}
-            disabled={loading}
-            className="text-xs bg-gradient-to-r from-violet-500/10 to-pink-500/10 border-primary/30 text-primary hover:bg-primary/10"
-            id="btn-connect-all-demo"
-          >
-            ⚡ Connect All (Demo)
-          </Button>
           {/* Connection progress */}
           <div className="hidden sm:flex items-center gap-1.5 bg-muted rounded-full px-3 py-1.5">
             <Wifi className="w-3.5 h-3.5 text-primary" />
@@ -164,7 +128,6 @@ export default function ConnectedAccounts() {
                     platform={platform}
                     account={account}
                     onConnect={handleConnect}
-                    onConnectDemo={handleConnectDemo}
                     onDisconnect={handleDisconnect}
                     loading={connecting === platform}
                   />

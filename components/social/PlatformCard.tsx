@@ -22,13 +22,12 @@ interface PlatformCardProps {
   platform:     Platform;
   account?:     SocialAccount;
   onConnect:    (p: Platform) => void;
-  onConnectDemo?: (p: Platform) => void;
   onDisconnect: (p: Platform) => void;
   loading?:     boolean;
 }
 
 export default function PlatformCard({
-  platform, account, onConnect, onConnectDemo, onDisconnect, loading = false,
+  platform, account, onConnect, onDisconnect, loading = false,
 }: PlatformCardProps) {
   const cfg     = PLATFORM_CONFIG[platform];
   const Icon    = PLATFORM_ICONS[platform];
@@ -84,7 +83,7 @@ export default function PlatformCard({
         </div>
 
         {/* Actions */}
-        <div className="pt-2 space-y-2">
+        <div className="pt-2">
           {connected ? (
             <div className="flex gap-2">
               <Button
@@ -111,29 +110,15 @@ export default function PlatformCard({
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
-              <Button
-                size="sm"
-                className={`w-full bg-gradient-to-r ${cfg.bgGradient} text-white border-0 hover:opacity-90 transition-opacity`}
-                onClick={() => onConnect(platform)}
-                disabled={loading}
-                id={`btn-connect-${platform}`}
-              >
-                Connect via OAuth
-              </Button>
-              {onConnectDemo && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => onConnectDemo(platform)}
-                  disabled={loading}
-                  id={`btn-connect-demo-${platform}`}
-                >
-                  ⚡ Instant Connect (Demo)
-                </Button>
-              )}
-            </div>
+            <Button
+              size="sm"
+              className={`w-full bg-gradient-to-r ${cfg.bgGradient} text-white border-0 hover:opacity-90 transition-opacity font-medium`}
+              onClick={() => onConnect(platform)}
+              disabled={loading}
+              id={`btn-connect-${platform}`}
+            >
+              Connect {cfg.name}
+            </Button>
           )}
         </div>
       </div>
