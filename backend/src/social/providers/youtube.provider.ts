@@ -10,7 +10,7 @@ export class YouTubeProvider extends BaseSocialProvider {
   readonly platform: Platform = 'youtube';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/youtube`;
+    const redirectUri = this.getRedirectUri(this.platform);
     const scopes = [
       'https://www.googleapis.com/auth/youtube.upload',
       'https://www.googleapis.com/auth/youtube.readonly',

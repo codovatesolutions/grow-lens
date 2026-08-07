@@ -9,7 +9,7 @@ export class PinterestProvider extends BaseSocialProvider {
   readonly platform: Platform = 'pinterest';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/pinterest`;
+    const redirectUri = this.getRedirectUri(this.platform);
     return (
       `https://www.pinterest.com/oauth/?client_id=${APP_ID}` +
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +

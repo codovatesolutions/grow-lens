@@ -9,7 +9,7 @@ export class FacebookProvider extends BaseSocialProvider {
   readonly platform: Platform = 'facebook';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/facebook`;
+    const redirectUri = this.getRedirectUri(this.platform);
     const scopes = [
       'pages_show_list',
       'pages_read_engagement',

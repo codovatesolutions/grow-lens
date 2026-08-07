@@ -9,7 +9,7 @@ export class TikTokProvider extends BaseSocialProvider {
   readonly platform: Platform = 'tiktok';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/tiktok`;
+    const redirectUri = this.getRedirectUri(this.platform);
     const scopes = 'user.info.basic,video.publish,video.upload';
     return (
       `https://www.tiktok.com/v2/auth/authorize/?client_key=${CLIENT_KEY}` +

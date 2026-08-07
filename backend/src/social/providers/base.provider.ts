@@ -82,6 +82,11 @@ export abstract class BaseSocialProvider {
     return [post.caption, tags, post.link].filter(Boolean).join('\n\n');
   }
 
+  protected getRedirectUri(platform: Platform): string {
+    const backend = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+    return `${backend}/api/social/callback/${platform}`;
+  }
+
   protected handleError(err: unknown, context: string): PublishResult {
     const msg = axios.isAxiosError(err)
       ? err.response?.data?.error?.message || err.response?.data?.message || err.message

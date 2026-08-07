@@ -88,7 +88,8 @@ router.get('/callback/:platform', async (req, res) => {
     if (!stateData) return res.redirect(`${FRONTEND}/social?error=invalid_state`);
 
     const provider    = getProvider(platform);
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/${platform}`;
+    const backendBase = (process.env.BACKEND_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const redirectUri = `${backendBase}/api/social/callback/${platform}`;
     const tokenData   = await provider.exchangeCode(code, redirectUri, state);
 
     await saveAccount(stateData.userId, platform, tokenData);

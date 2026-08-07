@@ -21,7 +21,7 @@ export class TwitterProvider extends BaseSocialProvider {
   readonly platform: Platform = 'twitter';
 
   getOAuthUrl(state: string): string {
-    const redirectUri   = `${process.env.BACKEND_URL}/api/social/callback/twitter`;
+    const redirectUri   = this.getRedirectUri(this.platform);
     const verifier      = generateCodeVerifier();
     const challenge     = generateCodeChallenge(verifier);
     pkceStore.set(state, verifier);

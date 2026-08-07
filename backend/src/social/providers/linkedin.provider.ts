@@ -9,7 +9,7 @@ export class LinkedInProvider extends BaseSocialProvider {
   readonly platform: Platform = 'linkedin';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/linkedin`;
+    const redirectUri = this.getRedirectUri(this.platform);
     const scopes = 'openid,profile,email,w_member_social';
     return (
       `https://www.linkedin.com/oauth/v2/authorization?response_type=code` +

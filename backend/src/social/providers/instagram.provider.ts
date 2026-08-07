@@ -10,7 +10,7 @@ export class InstagramProvider extends BaseSocialProvider {
   readonly platform: Platform = 'instagram';
 
   getOAuthUrl(state: string): string {
-    const redirectUri = `${process.env.BACKEND_URL}/api/social/callback/instagram`;
+    const redirectUri = this.getRedirectUri(this.platform);
     const scopes = [
       'instagram_basic',
       'instagram_content_publish',
