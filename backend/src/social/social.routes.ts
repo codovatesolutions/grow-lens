@@ -12,6 +12,9 @@ import {
   getProvider, getScheduledPosts,
 } from './social.service';
 import { Platform, ALL_PLATFORMS } from './providers/base.provider';
+import { ApifyService } from './apify.service';
+
+const apifyService = new ApifyService();
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } }); // 100 MB
@@ -334,6 +337,30 @@ router.post('/ai/rewrite', requireAuth, async (req: any, res) => {
     if (!caption || !platform) return res.status(400).json({ error: 'caption and platform required' });
     const rewritten = await rewriteForPlatform(caption, platform);
     res.json({ caption: rewritten });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** POST /api/social/apify/scrape */
+router.post('/apify/scrape', requireAuth, async (req: any, res) => {
+  try {
+    const { platform = 'instagram', handle } = req.body;
+    if (!handle) return res.status(400).json({ error: 'handle or URL is required' });
+    const data = await apifyService.scrapeProfile(platform, handle);
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/** POST /api/social/apify/competitor-analysis */
+router.post('/apify/competitor-analysis', requireAuth, async (req: any, res) => {
+  try {
+    const { platform = 'instagram', handle } = req.body;
+    if (!handle) return res.status(400).json({ error: 'handle or URL is required' });
+    const analysis = await apifyService.analyzeCompetitor(platform, handle);
+    res.json(analysis);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }

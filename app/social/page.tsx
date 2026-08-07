@@ -1,19 +1,21 @@
 "use client";
 import { Suspense, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Wifi, PenSquare, Calendar, Clock, BarChart2 } from "lucide-react";
+import { Share2, Wifi, PenSquare, Calendar, Clock, BarChart2, Eye } from "lucide-react";
 import ConnectedAccounts    from "@/components/social/ConnectedAccounts";
 import CreatePost           from "@/components/social/CreatePost";
 import ContentCalendar      from "@/components/social/ContentCalendar";
 import PublishHistory       from "@/components/social/PublishHistory";
 import AnalyticsDashboard   from "@/components/social/AnalyticsDashboard";
+import ApifyCompetitorSpy   from "@/components/social/ApifyCompetitorSpy";
 
 const TABS = [
-  { id: "accounts",  label: "Accounts",  icon: Wifi,       description: "Manage connected social accounts" },
-  { id: "compose",   label: "Compose",   icon: PenSquare,  description: "Create and publish posts"         },
-  { id: "calendar",  label: "Calendar",  icon: Calendar,   description: "View scheduled posts"             },
-  { id: "history",   label: "History",   icon: Clock,      description: "Publish activity log"             },
-  { id: "analytics", label: "Analytics", icon: BarChart2,  description: "Performance metrics"              },
+  { id: "accounts",  label: "Accounts",       icon: Wifi,       description: "Manage connected social accounts" },
+  { id: "compose",   label: "Compose",        icon: PenSquare,  description: "Create and publish posts"         },
+  { id: "spy",       label: "Competitor Spy", icon: Eye,        description: "Scrape and analyze competitors with Apify" },
+  { id: "calendar",  label: "Calendar",       icon: Calendar,   description: "View scheduled posts"             },
+  { id: "history",   label: "History",        icon: Clock,      description: "Publish activity log"             },
+  { id: "analytics", label: "Analytics",      icon: BarChart2,  description: "Performance metrics"              },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -100,6 +102,7 @@ export default function SocialPage() {
                 {activeTab === "compose"   && (
                   <CreatePost onPublished={() => { setRefreshKey(k => k + 1); setActiveTab("history"); }} />
                 )}
+                {activeTab === "spy"       && <ApifyCompetitorSpy />}
                 {activeTab === "calendar"  && <ContentCalendar key={refreshKey} />}
                 {activeTab === "history"   && <PublishHistory key={refreshKey} onRetry={() => setActiveTab("compose")} />}
                 {activeTab === "analytics" && <AnalyticsDashboard key={refreshKey} />}

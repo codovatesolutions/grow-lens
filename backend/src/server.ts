@@ -269,6 +269,31 @@ EXPERT SUMMARY:
 {expert_summary}`;
 
 // ============ SCRAPER HELPER ============
+async function scrapeWithApifyCloud(url: string): Promise<string | null> {
+  const apiKey = process.env.APIFY_API_KEY;
+  if (!apiKey) return null;
+  try {
+    console.log(`[Apify Website Scan] Rendering full JS DOM for: ${url}`);
+    const response = await axios.post(
+      `https://api.apify.com/v2/acts/apify~website-content-crawler/run-sync-get-dataset-items?token=${apiKey}`,
+      {
+        startUrls: [{ url }],
+        maxCrawlPages: 1,
+        crawlerType: 'playwright:chrome',
+      },
+      { timeout: 25000 }
+    );
+    const items = response.data || [];
+    if (items.length > 0 && (items[0].html || items[0].text)) {
+      console.log(`[Apify Website Scan] Successfully retrieved rendered DOM via Apify!`);
+      return items[0].html || items[0].text;
+    }
+  } catch (err: any) {
+    console.warn(`[Apify Website Scan] Apify scan notice: ${err.message}. Using standard HTTP engine.`);
+  }
+  return null;
+}
+
 async function scrapeWebsite(targetUrl: string) {
   let url = targetUrl;
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -276,13 +301,24 @@ async function scrapeWebsite(targetUrl: string) {
   }
   
   try {
-    const response = await axios.get(url, {
-      timeout: 12000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LensGrowthBot/1.0)',
-      },
-    });
-    const html = response.data;
+    let html = '';
+    let headers: any = {};
+
+    // 1. Try Apify Playwright cloud rendering for complete SPA/JS page execution
+    const apifyHtml = await scrapeWithApifyCloud(url);
+    if (apifyHtml) {
+      html = apifyHtml;
+    } else {
+      const response = await axios.get(url, {
+        timeout: 12000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; LensGrowthBot/1.0)',
+        },
+      });
+      html = response.data;
+      headers = response.headers || {};
+    }
+
     const $ = cheerio.load(html);
     
     const title = $('title').text().trim();
@@ -342,7 +378,6 @@ async function scrapeWebsite(targetUrl: string) {
     $('script, style, noscript').remove();
     const bodyTextClean = $('body').text().replace(/\s+/g, ' ').trim().substring(0, 4000);
     
-    const headers = response.headers || {};
     const has_privacy_policy = internal_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy')) ||
       buttons_or_links.some(l => l.toLowerCase().includes('privacy') || l.toLowerCase().includes('policy'));
     const has_terms = internal_links.some(l => l.toLowerCase().includes('terms') || l.toLowerCase().includes('tos') || l.toLowerCase().includes('condition')) ||

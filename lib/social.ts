@@ -155,4 +155,10 @@ export const socialApi = {
 
   rewrite: (caption: string, platform: Platform): Promise<{ caption: string }> =>
     api.post('/social/ai/rewrite', { caption, platform }).then(r => r.data),
+
+  scrapeApify: (platform: string, handle: string) =>
+    api.post('/social/apify/scrape', { platform, handle }).then(r => r.data),
+
+  analyzeCompetitorApify: (platform: string, handle: string) =>
+    api.post('/social/apify/competitor-analysis', { platform, handle }).then(r => r.data),
 };
