@@ -22,12 +22,13 @@ interface PlatformCardProps {
   platform:     Platform;
   account?:     SocialAccount;
   onConnect:    (p: Platform) => void;
+  onConnectDemo?: (p: Platform) => void;
   onDisconnect: (p: Platform) => void;
   loading?:     boolean;
 }
 
 export default function PlatformCard({
-  platform, account, onConnect, onDisconnect, loading = false,
+  platform, account, onConnect, onConnectDemo, onDisconnect, loading = false,
 }: PlatformCardProps) {
   const cfg     = PLATFORM_CONFIG[platform];
   const Icon    = PLATFORM_ICONS[platform];
@@ -38,12 +39,12 @@ export default function PlatformCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative rounded-2xl border border-border bg-card overflow-hidden group"
+      className="relative rounded-2xl border border-border bg-card overflow-hidden group flex flex-col justify-between"
     >
       {/* Gradient top bar */}
       <div className={`h-1 w-full bg-gradient-to-r ${cfg.bgGradient}`} />
 
-      <div className="p-5 space-y-4">
+      <div className="p-5 space-y-4 flex-1 flex flex-col justify-between">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div
@@ -83,9 +84,9 @@ export default function PlatformCard({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="pt-2 space-y-2">
           {connected ? (
-            <>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -108,17 +109,31 @@ export default function PlatformCard({
                 <Unlink className="w-3 h-3 mr-1.5" />
                 Disconnect
               </Button>
-            </>
+            </div>
           ) : (
-            <Button
-              size="sm"
-              className={`flex-1 bg-gradient-to-r ${cfg.bgGradient} text-white border-0 hover:opacity-90 transition-opacity`}
-              onClick={() => onConnect(platform)}
-              disabled={loading}
-              id={`btn-connect-${platform}`}
-            >
-              Connect
-            </Button>
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                className={`w-full bg-gradient-to-r ${cfg.bgGradient} text-white border-0 hover:opacity-90 transition-opacity`}
+                onClick={() => onConnect(platform)}
+                disabled={loading}
+                id={`btn-connect-${platform}`}
+              >
+                Connect via OAuth
+              </Button>
+              {onConnectDemo && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => onConnectDemo(platform)}
+                  disabled={loading}
+                  id={`btn-connect-demo-${platform}`}
+                >
+                  ⚡ Instant Connect (Demo)
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>
