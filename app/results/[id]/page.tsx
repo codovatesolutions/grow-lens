@@ -435,7 +435,7 @@ function BusinessResults({ result, growthTeam, runTeam, running }: BusinessResul
           <Card className="p-8 text-center space-y-4">
             <h3 className="font-display text-lg font-bold">Convene the Board of 13 Experts</h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Simulate 13 specialist agents (UX, SEO, Pricing, Analytics, Copywriting, etc.) analyzing this report in parallel. They debate and calculate exact revenue leaks.
+              Run 13 specialist agents (UX, SEO, Pricing, Analytics, Copywriting, etc.) analyzing this report in parallel to project estimated growth bottlenecks and benchmark revenue impact.
             </p>
             <Button onClick={runTeam} disabled={running} data-testid="convene-board-btn">
               {running ? "Convening..." : "Convene Growth Board"}
