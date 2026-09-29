@@ -13,8 +13,8 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 // Gemini: gemini-2.5-flash is current default, fallback gemini-2.0-flash
 const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
 
-// Groq models: llama-3.3-70b-versatile, llama-3.1-8b-instant, llama3-70b-8192, openai/gpt-oss-120b
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama3-70b-8192'];
+// Groq models: llama-3.3-70b-versatile, llama-3.1-8b-instant, llama-3.1-70b-versatile
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'llama-3.1-70b-versatile'];
 
 // OpenRouter models
 const OPENROUTER_MODELS = ['meta-llama/llama-3.3-70b-instruct', 'deepseek/deepseek-r1-distill-llama-70b'];
