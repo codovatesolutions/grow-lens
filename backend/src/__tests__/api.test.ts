@@ -116,7 +116,37 @@ describe('GrowthLens Backend API Security & Functionality Test Suite', () => {
     });
   });
 
-  describe('5. Health Endpoint', () => {
+  describe('5. Billing & Webhook Fail-Closed Protection', () => {
+    it('should reject Stripe webhook with 503 if secret is unconfigured or 400 if signature missing', async () => {
+      const res = await request(app)
+        .post('/billing/webhook')
+        .send({ type: 'checkout.session.completed' });
+
+      // If STRIPE_WEBHOOK_SECRET is unset it returns 503, if set but missing header it returns 400
+      expect([400, 503]).toContain(res.status);
+      if (res.status === 400) {
+        expect(res.body.detail).toContain('Missing stripe-signature header');
+      } else {
+        expect(res.body.detail).toContain('Stripe webhook is not configured');
+      }
+    });
+  });
+
+  describe('6. Password Reset Token Privacy', () => {
+    it('should not expose password reset token in API response', async () => {
+      const res = await request(app)
+        .post('/auth/forgot-password')
+        .send({ email: 'nonexistent_test_user@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.token).toBeUndefined();
+      expect(res.body.reset_token).toBeUndefined();
+      expect(res.body.resetLink).toBeUndefined();
+    });
+  });
+
+  describe('7. Health Endpoint', () => {
     it('should return system health status', async () => {
       const res = await request(app).get('/health');
       expect(res.status).toBe(200);

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from './db';
 
@@ -9,9 +10,18 @@ const JWT_SECRET = process.env.JWT_SECRET || '';
 
 export function validateJwtSecretConfig(): string {
   const secret = process.env.JWT_SECRET;
+  const isProd = process.env.NODE_ENV === 'production';
+
   if (!secret || secret === 'dev-secret' || secret.length < 32) {
-    console.warn('[SECURITY WARNING] JWT_SECRET is unset, default, or too short (<32 chars). Generating dynamic strong fallback secret for session runtime.');
-    return secret && secret.length >= 32 ? secret : crypto.randomBytes(32).toString('hex');
+    if (isProd) {
+      throw new Error(
+        'FATAL: JWT_SECRET environment variable must be explicitly defined and at least 32 characters long in production.'
+      );
+    }
+    console.warn(
+      '[SECURITY WARNING] JWT_SECRET is unset, default, or too short (<32 chars). Generating dynamic strong fallback secret for session runtime.'
+    );
+    return crypto.randomBytes(32).toString('hex');
   }
   return secret;
 }
@@ -171,6 +181,49 @@ export async function changePassword(req: AuthenticatedRequest, res: Response) {
   }
 }
 
+function createEmailTransporter() {
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !user || !pass) {
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: {
+      user,
+      pass,
+    },
+  });
+}
+
+export async function sendPasswordResetEmail(email: string, resetLink: string) {
+  const transporter = createEmailTransporter();
+  const from = process.env.SMTP_FROM || '"GrowthLens Support" <noreply@lensgrowth.codovatesolutions.in>';
+
+  if (transporter) {
+    await transporter.sendMail({
+      from,
+      to: email,
+      subject: 'Reset your GrowthLens password',
+      text: `Hello,\n\nYou requested to reset your password. Click the link below to set a new password:\n\n${resetLink}\n\nIf you did not request this, please ignore this email.\n\nThanks,\nGrowthLens Team`,
+      html: `<p>Hello,</p><p>You requested to reset your password. Click the link below to set a new password:</p><p><a href="${resetLink}">${resetLink}</a></p><p>If you did not request this, please ignore this email.</p><br/><p>Thanks,<br/>GrowthLens Team</p>`,
+    });
+  } else {
+    // Non-production fallback logging without exposing raw secret details in production logs
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[PASSWORD RESET DEV] Dispatching password reset link to ${email}`);
+    } else {
+      console.error(`[PASSWORD RESET ERROR] SMTP credentials not configured (SMTP_HOST, SMTP_USER, SMTP_PASS missing). Email not sent to ${email}.`);
+    }
+  }
+}
+
 // Request Password Reset
 export async function forgotPassword(req: Request, res: Response) {
   const { email } = req.body;
@@ -196,8 +249,7 @@ export async function forgotPassword(req: Request, res: Response) {
     const frontendUrl = process.env.FRONTEND_URL || 'https://lensgrowth.codovatesolutions.in';
     const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-    // Dispatched via Nodemailer/SMTP if configured, or internal log in non-production
-    console.log(`[PASSWORD RESET] Dispatched reset link to ${email.toLowerCase().trim()}: ${resetLink}`);
+    await sendPasswordResetEmail(email.toLowerCase().trim(), resetLink);
 
     return res.json({
       ok: true,

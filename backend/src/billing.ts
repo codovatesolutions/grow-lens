@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Stripe from 'stripe';
 import { pool } from './db';
-import { PLAN_LIMITS } from './quotas';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
@@ -77,8 +76,8 @@ export async function createCheckoutSession(userId: string, userEmail: string, p
     return { checkout_url: session.url || `${frontendUrl}/billing?success=true`, mode: 'stripe' };
   }
 
-  // Fail closed in production if Stripe is not configured
-  const isTestBypass = process.env.NODE_ENV === 'test' || process.env.ALLOW_TEST_BILLING_BYPASS === 'true';
+  // Strict test-only bypass: requires BOTH NODE_ENV === 'test' AND ALLOW_TEST_BILLING_BYPASS === 'true'
+  const isTestBypass = process.env.NODE_ENV === 'test' && process.env.ALLOW_TEST_BILLING_BYPASS === 'true';
   if (!isTestBypass) {
     throw new Error('Stripe billing is not configured in production. Please provide STRIPE_SECRET_KEY in environment variables.');
   }
@@ -99,36 +98,41 @@ export async function createCheckoutSession(userId: string, userEmail: string, p
 }
 
 export async function handleBillingWebhook(req: Request, res: Response) {
-  let event: any;
-
-  if (stripe && STRIPE_WEBHOOK_SECRET) {
-    const signature = req.headers['stripe-signature'];
-    if (!signature) {
-      return res.status(400).json({ detail: 'Missing stripe-signature header' });
-    }
-
-    try {
-      // req.body MUST be the raw unparsed Buffer from express.raw({ type: 'application/json' })
-      const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
-      event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
-    } catch (err: any) {
-      console.error('Stripe webhook signature verification failed:', err.message);
-      return res.status(400).json({ detail: `Webhook Signature Verification Failed: ${err.message}` });
-    }
-  } else {
-    // Parse raw body buffer or JSON object
-    try {
-      event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body;
-    } catch (err: any) {
-      return res.status(400).json({ detail: 'Invalid JSON webhook body payload' });
-    }
+  // Fail-closed: reject requests if Stripe or Webhook Secret is not configured
+  if (!stripe || !STRIPE_WEBHOOK_SECRET) {
+    return res.status(503).json({
+      detail: 'Stripe webhook is not configured',
+    });
   }
 
-  const type = event?.type;
-  const data = event?.data;
+  const signature = req.headers['stripe-signature'];
+
+  if (!signature) {
+    return res.status(400).json({
+      detail: 'Missing stripe-signature header',
+    });
+  }
+
+  let event: Stripe.Event;
+
+  try {
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+    event = stripe.webhooks.constructEvent(
+      rawBody,
+      signature as string,
+      STRIPE_WEBHOOK_SECRET
+    );
+  } catch {
+    return res.status(400).json({
+      detail: 'Invalid Stripe webhook signature',
+    });
+  }
+
+  const type = event.type;
+  const data = event.data;
 
   if (type === 'checkout.session.completed') {
-    const session = data?.object || {};
+    const session = data?.object as any || {};
     const userId = session.client_reference_id || session.metadata?.user_id;
     const planId = session.metadata?.plan_id || 'pro';
     const customerId = session.customer;
@@ -144,7 +148,7 @@ export async function handleBillingWebhook(req: Request, res: Response) {
       );
     }
   } else if (type === 'customer.subscription.updated') {
-    const subscription = data?.object || {};
+    const subscription = data?.object as any || {};
     const customerId = subscription.customer;
     const status = subscription.status === 'active' ? 'active' : 'canceled';
 
@@ -153,7 +157,7 @@ export async function handleBillingWebhook(req: Request, res: Response) {
       [status, subscription.current_period_end || Math.floor(Date.now() / 1000) + 30 * 86400, customerId]
     );
   } else if (type === 'customer.subscription.deleted') {
-    const subscription = data?.object || {};
+    const subscription = data?.object as any || {};
     const customerId = subscription.customer;
 
     await pool.query(
