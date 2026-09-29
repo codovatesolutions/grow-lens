@@ -31,7 +31,7 @@ export default function ReportsPage() {
 
   const copyShareLink = (scanId: string) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const publicUrl = `${origin}/results/${scanId}`;
+    const publicUrl = `${origin}/public/scans/${scanId}`;
     navigator.clipboard.writeText(publicUrl);
     toast.success("Public report link copied to clipboard!");
   };

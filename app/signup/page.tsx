@@ -175,7 +175,6 @@ export default function Signup() {
                   <SelectItem value="business">Business owner</SelectItem>
                   <SelectItem value="creator">Creator</SelectItem>
                   <SelectItem value="analyst">Analyst / consultant</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>

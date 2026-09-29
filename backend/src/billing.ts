@@ -1,6 +1,20 @@
 import { Request, Response, NextFunction } from 'express';
 import { pool } from './db';
-import { PLAN_LIMITS, getDailyUsage } from './quotas';
+import { PLAN_LIMITS } from './quotas';
+
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
+const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
+
+// Initialize Stripe SDK lazily if secret key is present
+let stripe: any = null;
+if (STRIPE_SECRET_KEY) {
+  try {
+    const Stripe = require('stripe');
+    stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
+  } catch (err) {
+    console.warn('Stripe SDK initialization notice:', err);
+  }
+}
 
 export async function getUserSubscription(userId: string) {
   const res = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [userId]);
@@ -41,11 +55,74 @@ export function requirePlan(minPlan: 'pro' | 'enterprise') {
   };
 }
 
-export async function handleBillingWebhook(event: any) {
+export async function createCheckoutSession(userId: string, userEmail: string, planId: string): Promise<{ checkout_url: string; mode: string }> {
+  const targetPlan = planId.toLowerCase() === 'enterprise' ? 'enterprise' : 'pro';
+  const priceId = targetPlan === 'enterprise'
+    ? (process.env.STRIPE_PRICE_ENTERPRISE || 'price_enterprise_mock')
+    : (process.env.STRIPE_PRICE_PRO || 'price_pro_mock');
+
+  const frontendUrl = process.env.FRONTEND_URL || 'https://lensgrowth.codovatesolutions.in';
+
+  if (stripe && STRIPE_SECRET_KEY) {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'subscription',
+      customer_email: userEmail,
+      client_reference_id: userId,
+      metadata: { user_id: userId, plan_id: targetPlan },
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      success_url: `${frontendUrl}/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/billing?canceled=true`,
+    });
+    return { checkout_url: session.url, mode: 'stripe' };
+  }
+
+  // Fallback: Activate subscription directly in DB when Stripe is not configured
+  await pool.query(
+    `INSERT INTO subscriptions (user_id, plan_id, status, current_period_end, updated_at)
+     VALUES ($1, $2, 'active', NOW() + INTERVAL '30 days', NOW())
+     ON CONFLICT (user_id)
+     DO UPDATE SET plan_id = $2, status = 'active', current_period_end = NOW() + INTERVAL '30 days', updated_at = NOW()`,
+    [userId, targetPlan]
+  );
+
+  return {
+    checkout_url: `/billing?success=true&plan=${targetPlan}`,
+    mode: 'direct_provision',
+  };
+}
+
+export async function handleBillingWebhook(req: Request, res: Response) {
+  let event = req.body;
+
+  // Perform Stripe Signature Verification if secret is present
+  if (stripe && STRIPE_WEBHOOK_SECRET) {
+    const signature = req.headers['stripe-signature'];
+    if (!signature) {
+      return res.status(400).json({ detail: 'Missing stripe-signature header' });
+    }
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        STRIPE_WEBHOOK_SECRET
+      );
+    } catch (err: any) {
+      console.error('Stripe webhook signature verification failed:', err.message);
+      return res.status(400).json({ detail: `Webhook Signature Verification Failed: ${err.message}` });
+    }
+  }
+
   const { type, data } = event;
 
   if (type === 'checkout.session.completed') {
-    const session = data.object;
+    const session = data?.object || {};
     const userId = session.client_reference_id || session.metadata?.user_id;
     const planId = session.metadata?.plan_id || 'pro';
     const customerId = session.customer;
@@ -61,16 +138,16 @@ export async function handleBillingWebhook(event: any) {
       );
     }
   } else if (type === 'customer.subscription.updated') {
-    const subscription = data.object;
+    const subscription = data?.object || {};
     const customerId = subscription.customer;
     const status = subscription.status === 'active' ? 'active' : 'canceled';
 
     await pool.query(
       'UPDATE subscriptions SET status = $1, current_period_end = to_timestamp($2), updated_at = NOW() WHERE stripe_customer_id = $3',
-      [status, subscription.current_period_end, customerId]
+      [status, subscription.current_period_end || Math.floor(Date.now() / 1000) + 30 * 86400, customerId]
     );
   } else if (type === 'customer.subscription.deleted') {
-    const subscription = data.object;
+    const subscription = data?.object || {};
     const customerId = subscription.customer;
 
     await pool.query(
@@ -78,4 +155,6 @@ export async function handleBillingWebhook(event: any) {
       [customerId]
     );
   }
+
+  return res.json({ received: true });
 }

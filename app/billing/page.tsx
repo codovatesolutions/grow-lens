@@ -1,58 +1,107 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Shell from "@/components/Shell";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { CreditCard, Check, Sparkles, Zap, ShieldCheck, ArrowUpRight } from "lucide-react";
+import { CreditCard, Check, ShieldCheck, ArrowUpRight } from "lucide-react";
 
 export default function BillingPage() {
+  const [subData, setSubData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [upgradingPlan, setUpgradingPlan] = useState<string | null>(null);
+
+  const loadBilling = async () => {
+    try {
+      const { data } = await api.get("/billing/subscription");
+      setSubData(data);
+    } catch (err: any) {
+      toast.error("Failed to load subscription status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBilling();
+  }, []);
+
+  const handleUpgrade = async (planId: string) => {
+    setUpgradingPlan(planId);
+    try {
+      const { data } = await api.post("/billing/create-checkout", { plan_id: planId });
+      if (data.checkout_url) {
+        toast.success(`Redirecting to checkout for ${planId.toUpperCase()} plan...`);
+        if (data.mode === 'stripe') {
+          window.location.href = data.checkout_url;
+        } else {
+          toast.success(`Plan upgraded to ${planId.toUpperCase()}!`);
+          await loadBilling();
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Checkout initiation failed");
+    } finally {
+      setUpgradingPlan(null);
+    }
+  };
+
+  const currentPlanId = subData?.plan_id || "free";
+  const limits = subData?.limits || { scansPerDay: 5, growthTeamPerDay: 1 };
+  const usage = subData?.usage || { scans_count: 0, growth_team_calls: 0 };
+  const pctUsed = Math.min(100, Math.round(((usage.scans_count || 0) / (limits.scansPerDay || 5)) * 100));
+
   const plans = [
     {
+      id: "free",
       name: "Starter / Free",
       price: "$0",
       period: "forever",
-      desc: "Perfect for exploring website scans and basic audit metrics.",
+      desc: "Ideal for individual website scan exploration and basic audit metrics.",
       features: [
-        "3 Scans per month",
+        `${limits.scansPerDay || 5} Scans per day limit`,
         "Overall score & top 5 fixes",
-        "Basic security audit",
+        "Basic security headers audit",
         "Community support",
       ],
-      current: true,
+      current: currentPlanId === "free",
     },
     {
+      id: "pro",
       name: "Business Pro",
       price: "$49",
       period: "/ month",
-      desc: "Comprehensive conversion, SEO, and security audits for growth teams.",
+      desc: "Comprehensive conversion, SEO, security audits, and AI Growth Team for teams.",
       features: [
-        "Unlimited Scans",
+        "50 Scans per day limit",
         "Deep Security & Vulnerabilities Audit",
-        "Board of 13 Expert Agents Simulation",
-        "Lead Extraction & CSV Export",
-        "Custom White-Label PDF Reports",
+        "13-Agent AI Growth Board Panel",
+        "SSRF & Security Header Inspection",
+        "Shareable Executive PDF & Web Reports",
         "Priority Support",
       ],
       popular: true,
-      current: false,
+      current: currentPlanId === "pro",
     },
     {
-      name: "Agency",
+      id: "enterprise",
+      name: "Enterprise",
       price: "$199",
       period: "/ month",
-      desc: "Built for marketing agencies, consultants, and enterprise teams.",
+      desc: "Built for marketing agencies, consultants, and high-volume enterprise teams.",
       features: [
         "Everything in Business Pro",
-        "Unlimited Team Members",
-        "Client Access Portals",
-        "Automated Scheduled Monitoring",
-        "Custom API Integrations",
-        "Dedicated Account Manager",
+        "500 Scans per day limit",
+        "100 AI Growth Team Panel runs / day",
+        "Dedicated API Quotas & Custom Integrations",
+        "Automated DB Backups & Entitlement SLA",
+        "Dedicated Account Support",
       ],
-      current: false,
+      current: currentPlanId === "enterprise",
     },
   ];
 
@@ -61,10 +110,10 @@ export default function BillingPage() {
       <div className="space-y-6" data-testid="billing-page">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-primary" /> Plans & Billing
+            <CreditCard className="w-6 h-6 text-primary" /> Subscription & Plan Entitlements
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage your subscription plan, scan quotas, and invoice history.
+            Manage your subscription plan, API quota entitlements, and billing status.
           </p>
         </div>
 
@@ -72,25 +121,29 @@ export default function BillingPage() {
         <Card className="p-6 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent space-y-4">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
             <div>
-              <span className="text-xs font-mono uppercase tracking-widest text-primary font-bold">Current Subscription</span>
-              <h2 className="font-display text-xl font-bold mt-1">Business Pro Plan (Trial)</h2>
+              <span className="text-xs font-mono uppercase tracking-widest text-primary font-bold">Active Subscription</span>
+              <h2 className="font-display text-xl font-bold mt-1 uppercase">
+                {currentPlanId} Plan
+              </h2>
             </div>
-            <Badge className="bg-emerald-500 text-white font-mono text-xs px-3 py-1">Active</Badge>
+            <Badge className="bg-emerald-500 text-white font-mono text-xs px-3 py-1 uppercase">
+              {subData?.subscription?.status || "Active"}
+            </Badge>
           </div>
           <div className="space-y-2 max-w-md">
             <div className="flex justify-between text-xs font-medium">
-              <span>Monthly Scan Quota</span>
-              <span>18 / 50 Scans Used</span>
+              <span>Daily Scan Quota Usage</span>
+              <span>{usage.scans_count || 0} / {limits.scansPerDay || 5} Scans Used Today</span>
             </div>
-            <Progress value={36} className="h-2" />
+            <Progress value={pctUsed} className="h-2" />
           </div>
         </Card>
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-6 pt-2">
-          {plans.map((plan, idx) => (
+          {plans.map((plan) => (
             <Card
-              key={idx}
+              key={plan.id}
               className={`p-6 flex flex-col justify-between relative transition-all ${
                 plan.popular ? "border-primary shadow-lg ring-1 ring-primary" : "border-border"
               }`}
@@ -122,42 +175,18 @@ export default function BillingPage() {
               <Button
                 className="w-full mt-6"
                 variant={plan.current ? "outline" : plan.popular ? "default" : "secondary"}
-                onClick={() => toast.success(`Selected ${plan.name}`)}
+                disabled={plan.current || upgradingPlan === plan.id}
+                onClick={() => handleUpgrade(plan.id)}
               >
-                {plan.current ? "Current Plan" : `Upgrade to ${plan.name}`}
+                {plan.current
+                  ? "Current Active Plan"
+                  : upgradingPlan === plan.id
+                  ? "Processing..."
+                  : `Upgrade to ${plan.name}`}
               </Button>
             </Card>
           ))}
         </div>
-
-        {/* Invoices */}
-        <Card className="p-6 space-y-4">
-          <h3 className="font-display font-bold text-base">Billing & Invoice History</h3>
-          <div className="divide-y divide-border text-xs">
-            <div className="py-3 flex justify-between items-center font-medium text-muted-foreground">
-              <span>Date</span>
-              <span>Description</span>
-              <span>Amount</span>
-              <span>Receipt</span>
-            </div>
-            <div className="py-3 flex justify-between items-center">
-              <span>July 1, 2026</span>
-              <span>Business Pro Plan - Monthly</span>
-              <span className="font-mono font-semibold">$49.00</span>
-              <Button variant="ghost" size="sm" onClick={() => toast.info("Downloading receipt PDF...")}>
-                PDF
-              </Button>
-            </div>
-            <div className="py-3 flex justify-between items-center">
-              <span>June 1, 2026</span>
-              <span>Business Pro Plan - Monthly</span>
-              <span className="font-mono font-semibold">$49.00</span>
-              <Button variant="ghost" size="sm" onClick={() => toast.info("Downloading receipt PDF...")}>
-                PDF
-              </Button>
-            </div>
-          </div>
-        </Card>
       </div>
     </Shell>
   );

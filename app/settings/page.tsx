@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Shell from "@/components/Shell";
 import { useAuth } from "@/lib/auth";
+import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Settings, User, Lock, Shield, CheckCircle } from "lucide-react";
+import { Settings, User, Lock } from "lucide-react";
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -23,26 +24,45 @@ export default function SettingsPage() {
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) {
+      toast.error("Name cannot be empty");
+      return;
+    }
     setSavingProfile(true);
-    setTimeout(() => {
-      setSavingProfile(false);
+    try {
+      await api.patch("/auth/profile", { name: name.trim() });
       toast.success("Profile preferences saved successfully");
-    }, 600);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to save profile");
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!currentPassword) {
+      toast.error("Please enter your current password");
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("New password must be at least 8 characters long with uppercase and number");
       return;
     }
     setSavingPassword(true);
-    setTimeout(() => {
-      setSavingPassword(false);
+    try {
+      await api.post("/auth/change-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+      });
       setCurrentPassword("");
       setNewPassword("");
       toast.success("Password updated successfully");
-    }, 600);
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to update password");
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   return (
@@ -111,6 +131,7 @@ export default function SettingsPage() {
                 value={currentPassword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
                 placeholder="••••••••"
+                required
               />
             </div>
             <div className="space-y-2">
@@ -120,7 +141,8 @@ export default function SettingsPage() {
                 type="password"
                 value={newPassword}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
-                placeholder="Minimum 6 characters"
+                placeholder="Minimum 8 characters (uppercase & number)"
+                required
               />
             </div>
             <Button type="submit" disabled={savingPassword}>

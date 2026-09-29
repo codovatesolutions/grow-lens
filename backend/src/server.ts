@@ -14,7 +14,7 @@ import { startQueueWorker, scrapeWebsite } from './queue';
 import { validateUrlForSSRF } from './security';
 import { llmJson, llmText, checkLlmHealth } from './llm';
 import { enforceQuota, incrementUsage, getUserPlan, PLAN_LIMITS } from './quotas';
-import { getUserSubscription, requirePlan, handleBillingWebhook } from './billing';
+import { getUserSubscription, requirePlan, handleBillingWebhook, createCheckoutSession } from './billing';
 import { NETWORKS, createXPKCEState, consumeOAuthState, getTikTokProfile, createLinkedInPost } from './social';
 import {
   EFFECTIVE_JWT_SECRET,
@@ -713,23 +713,30 @@ api.get('/billing/subscription', requireAuth, async (req: AuthenticatedRequest, 
     const sub = await getUserSubscription(req.user!.id);
     const planId = sub.plan_id || 'free';
     const limits = PLAN_LIMITS[planId] || PLAN_LIMITS.free;
+    const usage = await pool.query('SELECT * FROM usage_records WHERE user_id = $1 AND usage_date = CURRENT_DATE', [req.user!.id]);
     return res.json({
       subscription: sub,
       plan_id: planId,
       limits,
+      usage: usage.rows[0] || { scans_count: 0, growth_team_calls: 0, creator_scans_count: 0 },
     });
   } catch (err: any) {
     return res.status(500).json({ detail: err.message });
   }
 });
 
-api.post('/billing/webhook', async (req: Request, res: Response) => {
+api.post('/billing/create-checkout', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  const { plan_id } = req.body;
   try {
-    await handleBillingWebhook(req.body);
-    return res.json({ received: true });
+    const session = await createCheckoutSession(req.user!.id, req.user!.email, plan_id || 'pro');
+    return res.json(session);
   } catch (err: any) {
-    return res.status(400).json({ detail: `Webhook Error: ${err.message}` });
+    return res.status(500).json({ detail: err.message });
   }
+});
+
+api.post('/billing/webhook', async (req: Request, res: Response) => {
+  return handleBillingWebhook(req, res);
 });
 
 // Social Certified Networks Routes
