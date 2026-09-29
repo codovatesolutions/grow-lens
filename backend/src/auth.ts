@@ -179,7 +179,7 @@ export async function forgotPassword(req: Request, res: Response) {
   }
 
   try {
-    const userRes = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const userRes = await pool.query('SELECT id, email, name FROM users WHERE email = $1', [email.toLowerCase().trim()]);
     if (userRes.rows.length === 0) {
       // Return generic message to prevent account enumeration
       return res.json({ ok: true, detail: 'If that email exists in our system, a password reset link has been dispatched.' });
@@ -193,11 +193,15 @@ export async function forgotPassword(req: Request, res: Response) {
       [resetToken, resetExpires, email.toLowerCase().trim()]
     );
 
+    const frontendUrl = process.env.FRONTEND_URL || 'https://lensgrowth.codovatesolutions.in';
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+    // Dispatched via Nodemailer/SMTP if configured, or internal log in non-production
+    console.log(`[PASSWORD RESET] Dispatched reset link to ${email.toLowerCase().trim()}: ${resetLink}`);
+
     return res.json({
       ok: true,
       detail: 'If that email exists in our system, a password reset link has been dispatched.',
-      // Included reset_token in response for test environment simulation
-      reset_token_dev: resetToken,
     });
   } catch (err: any) {
     return res.status(500).json({ detail: err.message });

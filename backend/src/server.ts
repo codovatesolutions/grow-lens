@@ -55,6 +55,10 @@ app.use(cors({
   credentials: true,
 }));
 
+// Stripe Webhook Raw Body Route (MUST be mounted before express.json parser for signature verification)
+app.post('/billing/webhook', express.raw({ type: 'application/json' }), handleBillingWebhook);
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), handleBillingWebhook);
+
 // Payload Limiters
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));

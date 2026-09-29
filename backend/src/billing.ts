@@ -1,20 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
+import Stripe from 'stripe';
 import { pool } from './db';
 import { PLAN_LIMITS } from './quotas';
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || '';
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
-// Initialize Stripe SDK lazily if secret key is present
-let stripe: any = null;
-if (STRIPE_SECRET_KEY) {
-  try {
-    const Stripe = require('stripe');
-    stripe = new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' });
-  } catch (err) {
-    console.warn('Stripe SDK initialization notice:', err);
-  }
-}
+// Initialize Stripe SDK safely
+export const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY)
+  : null;
 
 export async function getUserSubscription(userId: string) {
   const res = await pool.query('SELECT * FROM subscriptions WHERE user_id = $1', [userId]);
@@ -79,10 +74,16 @@ export async function createCheckoutSession(userId: string, userEmail: string, p
       success_url: `${frontendUrl}/billing?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/billing?canceled=true`,
     });
-    return { checkout_url: session.url, mode: 'stripe' };
+    return { checkout_url: session.url || `${frontendUrl}/billing?success=true`, mode: 'stripe' };
   }
 
-  // Fallback: Activate subscription directly in DB when Stripe is not configured
+  // Fail closed in production if Stripe is not configured
+  const isTestBypass = process.env.NODE_ENV === 'test' || process.env.ALLOW_TEST_BILLING_BYPASS === 'true';
+  if (!isTestBypass) {
+    throw new Error('Stripe billing is not configured in production. Please provide STRIPE_SECRET_KEY in environment variables.');
+  }
+
+  // Test-only provisioning bypass
   await pool.query(
     `INSERT INTO subscriptions (user_id, plan_id, status, current_period_end, updated_at)
      VALUES ($1, $2, 'active', NOW() + INTERVAL '30 days', NOW())
@@ -93,14 +94,13 @@ export async function createCheckoutSession(userId: string, userEmail: string, p
 
   return {
     checkout_url: `/billing?success=true&plan=${targetPlan}`,
-    mode: 'direct_provision',
+    mode: 'test_provision',
   };
 }
 
 export async function handleBillingWebhook(req: Request, res: Response) {
-  let event = req.body;
+  let event: any;
 
-  // Perform Stripe Signature Verification if secret is present
   if (stripe && STRIPE_WEBHOOK_SECRET) {
     const signature = req.headers['stripe-signature'];
     if (!signature) {
@@ -108,18 +108,24 @@ export async function handleBillingWebhook(req: Request, res: Response) {
     }
 
     try {
-      event = stripe.webhooks.constructEvent(
-        req.body,
-        signature,
-        STRIPE_WEBHOOK_SECRET
-      );
+      // req.body MUST be the raw unparsed Buffer from express.raw({ type: 'application/json' })
+      const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
+      event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
     } catch (err: any) {
       console.error('Stripe webhook signature verification failed:', err.message);
       return res.status(400).json({ detail: `Webhook Signature Verification Failed: ${err.message}` });
     }
+  } else {
+    // Parse raw body buffer or JSON object
+    try {
+      event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body;
+    } catch (err: any) {
+      return res.status(400).json({ detail: 'Invalid JSON webhook body payload' });
+    }
   }
 
-  const { type, data } = event;
+  const type = event?.type;
+  const data = event?.data;
 
   if (type === 'checkout.session.completed') {
     const session = data?.object || {};
